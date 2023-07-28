@@ -1,1 +1,195 @@
+// SecurityConfig.java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+    private final UserService userService;
+
+    @Autowired
+    public SecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable()
+            .cors().and()
+            .authorizeRequests()
+            .antMatchers("/api/registration").permitAll()
+            .antMatchers("/api/login").permitAll()
+            .antMatchers("/api/get-user").authenticated() // Require authentication for this endpoint
+            .anyRequest().authenticated()
+            .and()
+            .addFilter(new JwtAuthenticationFilter(authenticationManager()))
+            .addFilter(new JwtAuthorizationFilter(authenticationManager(), userService))
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
+    }
+
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+
+==========
+
+
+// JwtUtils.java
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class JwtUtils {
+
+    private static final String SECRET_KEY = "your-secret-key"; // Replace with your secret key
+    private static final long EXPIRATION_TIME = 86400000; // 1 day in milliseconds
+
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .compact();
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    private boolean isTokenExpired(String token) {
+        final Date expiration = extractExpiration(token);
+        return expiration.before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaims(token).getExpiration();
+    }
+
+    private String extractUsername(String token) {
+        return extractClaims(token).getSubject();
+    }
+
+    private Claims extractClaims(String token) {
+        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+    }
+}
+
+
+=======
+
+
+// JwtAuthenticationFilter.java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+
+public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    private final AuthenticationManager authenticationManager;
+
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+        setFilterProcessesUrl("/api/login"); // Set the login URL
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request,
+                                                HttpServletResponse response) throws AuthenticationException {
+        try {
+            LoginRequest loginRequest = new ObjectMapper().readValue(request.getInputStream(), LoginRequest.class);
+            return authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword(), Collections.emptyList())
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+
+
+======
+// JwtAuthorizationFilter.java
+import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
+
+    private final UserService userService;
+
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserService userService) {
+        super(authenticationManager);
+        this.userService = userService;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws IOException, ServletException {
+        String token = request.getHeader("Authorization");
+
+        if (token == null || !token.startsWith("Bearer ")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            String username = JwtUtils.extractUsername(token.substring(7));
+            UserDetails userDetails = userService.loadUserByUsername(username);
+
+            if (userDetails != null && JwtUtils.validateToken(token.substring(7), userDetails)) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (ExpiredJwtException e) {
+            throw new AuthenticationServiceException("JWT token has expired");
+        }
+
+        chain.doFilter(request, response);
+    }
+}
+
+=====
