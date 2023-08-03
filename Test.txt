@@ -1,1 +1,100 @@
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import com.moneta.boot.security.JanusSecurityFilter; // Import the appropriate JanusSecurityFilter class
+
+@Configuration
+@Order(2)
+public class SecurityConfig1 {
+
+    private final JanusSecurityFilter janusSecurityFilter; // Autowire the JanusSecurityFilter bean
+
+    @Autowired
+    public SecurityConfig1(JanusSecurityFilter janusSecurityFilter) {
+        this.janusSecurityFilter = janusSecurityFilter;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain1(HttpSecurity http) throws Exception {
+        return http
+                .antMatcher("/public/secure/**")
+                .authorizeRequests(authorize -> authorize.anyRequest().authenticated())
+                .and()
+                .addFilterBefore((request, response, chain) -> janusSecurityFilter.doFilter(request, response, chain), BasicAuthenticationFilter.class)
+                // Add any other configurations specific to this filter chain
+                .csrf().disable()
+                .build();
+    }
+
+}
+=============
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import com.moneta.boot.adfs.AdfsConfigurer; // Import the appropriate AdfsConfigurer class
+
+@Configuration
+@Order(3)
+public class SecurityConfig2 {
+
+    private final AdfsConfigurer adfsConfigurer; // Autowire the AdfsConfigurer bean
+
+    @Autowired
+    public SecurityConfig2(AdfsConfigurer adfsConfigurer) {
+        this.adfsConfigurer = adfsConfigurer;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain2(HttpSecurity http) throws Exception {
+        return http
+                .antMatcher("/public/secure2/**")
+                .authorizeRequests(authorize -> authorize.anyRequest().authenticated())
+                .and()
+                .addFilterBefore((request, response, chain) -> adfsConfigurer.doFilter(request, response, chain), BasicAuthenticationFilter.class)
+                // Add any other configurations specific to this filter chain
+                .csrf().disable()
+                .build();
+    }
+
+}
+
+=========
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import com.moneta.boot.security.JanusSecurityFilter; // Import the appropriate JanusSecurityFilter class
+import com.moneta.boot.adfs.AdfsConfigurer; // Import the appropriate AdfsConfigurer class
+
+@Configuration
+@Order(1)
+public class PublicSecurityConfig {
+
+    private final JanusSecurityFilter janusSecurityFilter; // Autowire the JanusSecurityFilter bean
+    private final AdfsConfigurer adfsConfigurer; // Autowire the AdfsConfigurer bean
+
+    @Autowired
+    public PublicSecurityConfig(JanusSecurityFilter janusSecurityFilter, AdfsConfigurer adfsConfigurer) {
+        this.janusSecurityFilter = janusSecurityFilter;
+        this.adfsConfigurer = adfsConfigurer;
+    }
+
+    @Bean
+    public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .antMatcher("/public/**")
+                .authorizeRequests(authorize -> authorize.anyRequest().permitAll())
+                .and()
+                .addFilterBefore((request, response, chain) -> janusSecurityFilter.doFilter(request, response, chain), BasicAuthenticationFilter.class)
+                .addFilterBefore((request, response, chain) -> adfsConfigurer.doFilter(request, response, chain), BasicAuthenticationFilter.class)
+                // Add any other configurations that apply to all public endpoints
+                .csrf().disable()
+                .build();
+    }
+
+}
 
