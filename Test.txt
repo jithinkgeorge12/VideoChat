@@ -98,3 +98,37 @@ public class PublicSecurityConfig {
 
 }
 
+=====
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import com.moneta.boot.security.JanusSecurityFilterChain; // Import the appropriate JanusSecurityFilterChain class
+
+@Configuration
+@Order(2)
+public class SecurityConfig1 {
+
+    private final JanusSecurityFilterChain janusSecurityFilterChain; // Autowire the JanusSecurityFilterChain bean
+
+    @Autowired
+    public SecurityConfig1(JanusSecurityFilterChain janusSecurityFilterChain) {
+        this.janusSecurityFilterChain = janusSecurityFilterChain;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain1(HttpSecurity http) throws Exception {
+        return http
+                .antMatcher("/public/secure/**")
+                .authorizeRequests(authorize -> authorize.anyRequest().authenticated())
+                .and()
+                .addFilterBefore(janusSecurityFilterChain, BasicAuthenticationFilter.class)
+                // Add any other configurations specific to this filter chain
+                .csrf().disable()
+                .build();
+    }
+
+}
+
+
