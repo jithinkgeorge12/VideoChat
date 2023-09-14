@@ -1,63 +1,3 @@
-
-Let's go through a step-by-step example. I'll provide you with code snippets for a problematic bean, a security filter chain, a test configuration excluding the problematic bean, and a test class for testing the security filter chain.
-
-1. ProblematicBean.java:
-
-java
-Copy code
-package com.example;
-
-import org.springframework.stereotype.Component;
-
-@Component
-public class ProblematicBean {
-    // Code for problematic bean
-}
-2. SecurityConfig.java:
-
-java
-Copy code
-package com.example;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.SecurityFilterChain;
-
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-            .authorizeRequests(authorizeRequests ->
-                authorizeRequests
-                    .antMatchers("/public/**").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .formLogin(withDefaults());
-    }
-
-    @Bean
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeRequests(authorizeRequests ->
-                authorizeRequests
-                    .antMatchers("/public/**").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .formLogin(withDefaults());
-
-        return http.build();
-    }
-}
-3. TestConfig.java (Excluding the problematic bean):
-
-java
-Copy code
 package com.example;
 
 import org.springframework.context.annotation.ComponentScan;
@@ -67,53 +7,36 @@ import org.springframework.context.annotation.FilterType;
 @Configuration
 @ComponentScan(
     basePackages = "com.example",
-    excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = ProblematicBean.class)
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = CustomComponentFilter.class)
+    }
 )
 public class TestConfig {
     // Configuration for testing
 }
-4. SecurityFilterChainTest.java (Testing the security filter chain):
+CustomComponentFilter.java:
 
 java
 Copy code
 package com.example;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.AbstractTypeHierarchyTraversingFilter;
+import org.springframework.core.type.filter.TypeFilter;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.io.IOException;
 
-@SpringBootTest(classes = TestConfig.class)
-@AutoConfigureMockMvc
-public class SecurityFilterChainTest {
+public class CustomComponentFilter extends AbstractTypeHierarchyTraversingFilter {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Test
-    public void testPublicPageAccess() throws Exception {
-        mockMvc.perform(get("/public/page"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("This is a public page"));
+    public CustomComponentFilter() {
+        super(true, true);
     }
 
-    @Test
-    @WithMockUser
-    public void testSecurePageAccess() throws Exception {
-        mockMvc.perform(get("/secure/page"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("This is a secure page"));
+    @Override
+    protected boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory) throws IOException {
+        String className = metadataReader.getClassMetadata().getClassName();
+        return className.equals("com.example.ProblematicBean1") ||
+               className.equals("com.otherpackage.ProblematicBean2"); // Replace with the actual package and class name
     }
 }
-Explanation:
-
-ProblematicBean is a component that you want to exclude from the test context.
-SecurityConfig is a class that configures Spring Security with a security filter chain.
-TestConfig is a configuration class specifically for testing. It excludes the ProblematicBean.
-SecurityFilterChainTest is a JUnit 5 test class that verifies access to the public and secure pages. It uses @SpringBootTest to load the application context with TestConfig and @AutoConfigureMockMvc to set up MockMvc for testing.
-By using TestConfig to exclude ProblematicBean, it will not be included in the test context, allowing you to focus on testing the security filter chain.
