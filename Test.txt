@@ -1,15 +1,14 @@
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.*;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.*;
 
@@ -20,15 +19,22 @@ public class SecurityFilterChainTest {
     @Autowired
     private SecurityFilterChain checkSecurityFilterChain;
 
+    private MockMvc mockMvc;
+
     @Test
     public void testSecurityFilterChain() throws Exception {
-        // Test public endpoint accessible by anyone
-        checkSecurityFilterChain.getFilterChain(new DefaultSecurityFilterChain(context));
+        mockMvc.perform(get("/public"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/secure"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/secure")
+                .with(httpBasic("username", "password")))
+                .andExpect(status().isOk());
     }
 
     @Configuration
-    @EnableWebSecurity
-    @Import(SecurityFilterAutoConfiguration.class)
     public static class TestSecurityConfig {
 
         @Bean
