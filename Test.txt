@@ -1,42 +1,56 @@
-package com.example;
-
-import org.springframework.context.annotation.ComponentScan;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
-@Configuration
-@ComponentScan(
-    basePackages = "com.example",
-    excludeFilters = {
-        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = CustomComponentFilter.class)
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.*;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.*;
+
+@RunWith(SpringRunner.class)
+@ContextConfiguration
+public class SecurityFilterChainTest {
+
+    @Autowired
+    private SecurityFilterChain checkSecurityFilterChain;
+
+    @Test
+    public void testSecurityFilterChain() throws Exception {
+        // Test public endpoint accessible by anyone
+        mockMvc.perform(get("/public"))
+                .andExpect(status().isOk());
+
+        // Test secure endpoint requires authentication
+        mockMvc.perform(get("/secure"))
+                .andExpect(status().isUnauthorized());
+
+        // Test secure endpoint with authenticated user
+        mockMvc.perform(get("/secure")
+                .with(httpBasic("username", "password")))
+                .andExpect(status().isOk());
     }
-)
-public class TestConfig {
-    // Configuration for testing
-}
-CustomComponentFilter.java:
 
-java
-Copy code
-package com.example;
+    @Configuration
+    @EnableWebSecurity
+    @Import(SecurityFilterAutoConfiguration.class)
+    public static class TestSecurityConfig {
 
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.AbstractTypeHierarchyTraversingFilter;
-import org.springframework.core.type.filter.TypeFilter;
-
-import java.io.IOException;
-
-public class CustomComponentFilter extends AbstractTypeHierarchyTraversingFilter {
-
-    public CustomComponentFilter() {
-        super(true, true);
-    }
-
-    @Override
-    protected boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory) throws IOException {
-        String className = metadataReader.getClassMetadata().getClassName();
-        return className.equals("com.example.ProblematicBean1") ||
-               className.equals("com.otherpackage.ProblematicBean2"); // Replace with the actual package and class name
+        @Bean
+        public SecurityFilterChain checkSecurityFilterChain(HttpSecurity http) throws Exception {
+            http
+                .authorizeRequests(authorizeRequests ->
+                    authorizeRequests
+                        .antMatchers("/public").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .httpBasic(withDefaults());
+            return http.build();
+        }
     }
 }
