@@ -1,16 +1,16 @@
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.*;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration
@@ -20,6 +20,11 @@ public class SecurityFilterChainTest {
     private SecurityFilterChain checkSecurityFilterChain;
 
     private MockMvc mockMvc;
+
+    @Before
+    public void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup().apply(springSecurity()).build();
+    }
 
     @Test
     public void testSecurityFilterChain() throws Exception {
@@ -35,18 +40,8 @@ public class SecurityFilterChainTest {
     }
 
     @Configuration
+    @Import(SecurityFilterChainConfig.class) // Import the main security configuration class
     public static class TestSecurityConfig {
-
-        @Bean
-        public SecurityFilterChain checkSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                .authorizeRequests(authorizeRequests ->
-                    authorizeRequests
-                        .antMatchers("/public").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(withDefaults());
-            return http.build();
-        }
+        // You can leave this empty. The main SecurityFilterChainConfig will be used.
     }
 }
