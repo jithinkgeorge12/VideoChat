@@ -1,47 +1,148 @@
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+-- Create the user table with partitioning and indexing
+CREATE TABLE user_table (
+    user_id NUMBER PRIMARY KEY,
+    created_date DATE,
+    notification_id NUMBER,
+    -- other columns
+)
+PARTITION BY RANGE (created_date)
+INTERVAL(NUMTOYMINTERVAL(6, 'MONTH'))
+(
+    PARTITION users_initial VALUES LESS THAN (TO_DATE('01-JAN-2024', 'DD-MON-YYYY'))
+);
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.*;
-import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+-- Create index on notification_id for the user table
+CREATE INDEX idx_notification_id_user ON user_table(notification_id);
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration
-public class SecurityFilterChainTest {
+-- Create local index on the partitioning column (created_date) for the user table
+CREATE INDEX idx_created_date_user ON user_table(created_date) LOCAL;
 
-    @Autowired
-    private SecurityFilterChain checkSecurityFilterChain;
+-- Create a procedure for automatic archiving every 1 year for the user table
+CREATE OR REPLACE PROCEDURE archive_data_user IS
+BEGIN
+    -- Create a new partition for archived data
+    EXECUTE IMMEDIATE 'ALTER TABLE user_table ADD PARTITION users_archive VALUES LESS THAN (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Move data to the archive partition
+    EXECUTE IMMEDIATE 'INSERT INTO user_table PARTITION (users_archive) SELECT * FROM user_table WHERE created_date < (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Delete the moved data from the main table
+    EXECUTE IMMEDIATE 'DELETE FROM user_table WHERE created_date < (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Create index on notification_id for the archive partition
+    EXECUTE IMMEDIATE 'CREATE INDEX idx_notification_id_archive_user ON user_table(notification_id) LOCAL (PARTITION users_archive)';
+    
+    -- Create local index on the partitioning column (created_date) for the archive partition
+    EXECUTE IMMEDIATE 'CREATE INDEX idx_created_date_archive_user ON user_table(created_date) LOCAL (PARTITION users_archive)';
+    
+    -- Commit the changes
+    COMMIT;
+END archive_data_user;
+/
 
-    private MockMvc mockMvc;
+-- Schedule the archiving procedure to run automatically every 1 year for the user table
+BEGIN
+    DBMS_SCHEDULER.create_job (
+        job_name        => 'ARCHIVE_JOB_USER',
+        job_type        => 'PLSQL_BLOCK',
+        job_action      => 'BEGIN archive_data_user; END;',
+        start_date      => TO_TIMESTAMP_TZ('2024-01-01 00:00:00.0 -08:00', 'YYYY-MM-DD HH24:MI:SS.FF TZD'),
+        repeat_interval => 'FREQ=YEARLY; BYMONTH=1; BYMONTHDAY=1; BYHOUR=0; BYMINUTE=0; BYSECOND=0',
+        enabled         => TRUE
+    );
+END;
+/
 
-    @Before
-    public void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup().apply(springSecurity()).build();
-    }
+-- Create the archive table with indexing for the user table
+CREATE TABLE user_table_archive (
+    user_id NUMBER PRIMARY KEY,
+    created_date DATE,
+    notification_id NUMBER,
+    -- other columns
+)
+TABLESPACE your_archive_tablespace_name_user; -- Specify your archive tablespace name if needed;
 
-    @Test
-    public void testSecurityFilterChain() throws Exception {
-        mockMvc.perform(get("/public"))
-                .andExpect(status().isOk());
+-- Create index on notification_id for the archive table for the user table
+CREATE INDEX idx_notification_id_archive_user ON user_table_archive(notification_id);
 
-        mockMvc.perform(get("/secure"))
-                .andExpect(status().isUnauthorized());
+-- Create local index on the partitioning column (created_date) for the archive table for the user table
+CREATE INDEX idx_created_date_archive_user ON user_table_archive(created_date) LOCAL;
 
-        mockMvc.perform(get("/secure")
-                .with(httpBasic("username", "password")))
-                .andExpect(status().isOk());
-    }
+-- Commit the changes for the user table
+COMMIT;
+Set 2: Employee Table
 
-    @Configuration
-    @Import(SecurityFilterChainConfig.class) // Import the main security configuration class
-    public static class TestSecurityConfig {
-        // You can leave this empty. The main SecurityFilterChainConfig will be used.
-    }
-}
+sql
+Copy code
+-- Create the employee table with partitioning and indexing
+CREATE TABLE employee_table (
+    employee_id NUMBER PRIMARY KEY,
+    created_date DATE,
+    notification_id NUMBER,
+    -- other columns
+)
+PARTITION BY RANGE (created_date)
+INTERVAL(NUMTOYMINTERVAL(6, 'MONTH'))
+(
+    PARTITION employees_initial VALUES LESS THAN (TO_DATE('01-JAN-2024', 'DD-MON-YYYY'))
+);
+
+-- Create index on notification_id for the employee table
+CREATE INDEX idx_notification_id_employee ON employee_table(notification_id);
+
+-- Create local index on the partitioning column (created_date) for the employee table
+CREATE INDEX idx_created_date_employee ON employee_table(created_date) LOCAL;
+
+-- Create a procedure for automatic archiving every 1 year for the employee table
+CREATE OR REPLACE PROCEDURE archive_data_employee IS
+BEGIN
+    -- Create a new partition for archived data
+    EXECUTE IMMEDIATE 'ALTER TABLE employee_table ADD PARTITION employees_archive VALUES LESS THAN (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Move data to the archive partition
+    EXECUTE IMMEDIATE 'INSERT INTO employee_table PARTITION (employees_archive) SELECT * FROM employee_table WHERE created_date < (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Delete the moved data from the main table
+    EXECUTE IMMEDIATE 'DELETE FROM employee_table WHERE created_date < (SYSTIMESTAMP - INTERVAL ''1'' YEAR)';
+    
+    -- Create index on notification_id for the archive partition
+    EXECUTE IMMEDIATE 'CREATE INDEX idx_notification_id_archive_employee ON employee_table(notification_id) LOCAL (PARTITION employees_archive)';
+    
+    -- Create local index on the partitioning column (created_date) for the archive partition
+    EXECUTE IMMEDIATE 'CREATE INDEX idx_created_date_archive_employee ON employee_table(created_date) LOCAL (PARTITION employees_archive)';
+    
+    -- Commit the changes
+    COMMIT;
+END archive_data_employee;
+/
+
+-- Schedule the archiving procedure to run automatically every 1 year for the employee table
+BEGIN
+    DBMS_SCHEDULER.create_job (
+        job_name        => 'ARCHIVE_JOB_EMPLOYEE',
+        job_type        => 'PLSQL_BLOCK',
+        job_action      => 'BEGIN archive_data_employee; END;',
+        start_date      => TO_TIMESTAMP_TZ('2024-01-01 00:00:00.0 -08:00', 'YYYY-MM-DD HH24:MI:SS.FF TZD'),
+        repeat_interval => 'FREQ=YEARLY; BYMONTH=1; BYMONTHDAY=1; BYHOUR=0; BYMINUTE=0; BYSECOND=0',
+        enabled         => TRUE
+    );
+END;
+/
+
+-- Create the archive table with indexing for the employee table
+CREATE TABLE employee_table_archive (
+    employee_id NUMBER PRIMARY KEY,
+    created_date DATE,
+    notification_id NUMBER,
+    -- other columns
+)
+TABLESPACE your_archive_tablespace_name_employee; -- Specify your archive tablespace name if needed;
+
+-- Create index on notification_id for the archive table for the employee table
+CREATE INDEX idx_notification_id_archive_employee ON employee_table_archive(notification_id);
+
+-- Create local index on the partitioning column (created_date) for the archive table for the employee table
+CREATE INDEX idx_created_date_archive_employee ON employee_table_archive(created_date) LOCAL;
+
+-- Commit the changes for the employee table
+COMMIT;
