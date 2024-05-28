@@ -1,53 +1,40 @@
 WITH json_data AS (
   SELECT 
-    id,
-    draftid,
+    notification_id,
     JSON_QUERY(payload, '$.data') AS data_json
   FROM inbounddetails
 ),
 properties_extracted AS (
   SELECT 
-    id,
-    draftid,
-    JSON_VALUE(data_json, '$.properties.firstname.value') AS firstname,
-    JSON_VALUE(data_json, '$.properties.lastname.value') AS lastname,
-    JSON_VALUE(data_json, '$.properties.officecode.value') AS officecode,
-    JSON_QUERY(data_json, '$.properties') AS properties_json
+    notification_id,
+    JSON_VALUE(data_json, '$.properties.firstName') AS firstName,
+    JSON_VALUE(data_json, '$.properties.lastName') AS lastName,
+    data_json
   FROM json_data
-),
-fund_keys AS (
-  SELECT 
-    id,
-    draftid,
-    key
-  FROM properties_extracted,
-    JSON_TABLE(
-      properties_json,
-      '$'
-      COLUMNS (
-        key VARCHAR2(4000) PATH 'lax $.*'
-      )
-    )
-  WHERE key LIKE 'funddetails%'
 ),
 fund_details AS (
   SELECT 
-    fk.id,
-    fk.draftid,
+    pe.notification_id,
+    pe.firstName,
+    pe.lastName,
     fk.key AS fund_key,
-    JSON_VALUE(jd.properties_json, '$.' || fk.key || '.collection.properties.currency') AS currency,
-    JSON_VALUE(jd.properties_json, '$.' || fk.key || '.collection.properties.domicile') AS domicile
-  FROM fund_keys fk
-  JOIN properties_extracted jd ON fk.id = jd.id AND fk.draftid = jd.draftid
+    JSON_VALUE(JSON_QUERY(pe.data_json, '$.properties.' || fk.key || '.collection.properties'), '$.currency') AS currency,
+    JSON_VALUE(JSON_QUERY(pe.data_json, '$.properties.' || fk.key || '.collection.properties'), '$.domicile') AS domicile
+  FROM properties_extracted pe,
+    JSON_TABLE(
+      pe.data_json,
+      '$.properties'
+      COLUMNS (
+        key VARCHAR2(4000) PATH 'lax $.*'
+      )
+    ) fk
+  WHERE fk.key LIKE 'fundDetails%'
 )
 SELECT 
-  fd.id,
-  fd.draftid,
-  pe.firstname,
-  pe.lastname,
-  pe.officecode,
+  fd.notification_id,
+  fd.firstName,
+  fd.lastName,
   fd.fund_key,
   fd.currency,
   fd.domicile
-FROM fund_details fd
-JOIN properties_extracted pe ON fd.id = pe.id AND fd.draftid = pe.draftid;
+FROM fund_details fd;
