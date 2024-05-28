@@ -12,29 +12,34 @@ properties_extracted AS (
     data_json
   FROM json_data
 ),
-fund_details AS (
+fund_keys AS (
   SELECT 
-    pe.notification_id,
-    pe.firstName,
-    pe.lastName,
-    fk.key AS fund_key,
-    JSON_VALUE(JSON_QUERY(pe.data_json, '$.properties.' || fk.key || '.collection.properties'), '$.currency') AS currency,
-    JSON_VALUE(JSON_QUERY(pe.data_json, '$.properties.' || fk.key || '.collection.properties'), '$.domicile') AS domicile
-  FROM properties_extracted pe,
+    notification_id,
+    key
+  FROM properties_extracted,
     JSON_TABLE(
-      pe.data_json,
+      data_json,
       '$.properties'
       COLUMNS (
         key VARCHAR2(4000) PATH 'lax $.*'
       )
-    ) fk
-  WHERE fk.key LIKE 'fundDetails%'
+    ) jt
+  WHERE key LIKE 'fundDetails%'
+),
+fund_details AS (
+  SELECT 
+    fk.notification_id,
+    fk.key AS fund_key,
+    JSON_QUERY(jd.data_json, '$.properties.' || fk.key || '.collection.properties') AS fund_properties_json
+  FROM fund_keys fk
+  JOIN properties_extracted jd ON fk.notification_id = jd.notification_id
 )
 SELECT 
   fd.notification_id,
-  fd.firstName,
-  fd.lastName,
+  pe.firstName,
+  pe.lastName,
   fd.fund_key,
-  fd.currency,
-  fd.domicile
-FROM fund_details fd;
+  JSON_VALUE(fd.fund_properties_json, '$.currency') AS currency,
+  JSON_VALUE(fd.fund_properties_json, '$.domicile') AS domicile
+FROM fund_details fd
+JOIN properties_extracted pe ON fd.notification_id = pe.notification_id;
