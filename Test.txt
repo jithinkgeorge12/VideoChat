@@ -30,7 +30,8 @@ fund_details AS (
   SELECT 
     fk.notification_id,
     fk.key AS fund_key,
-    JSON_QUERY(jd.data_json, '$.properties.' || fk.key || '.collection.properties') AS fund_properties_json
+    JSON_VALUE(jd.data_json, '$.properties.' || fk.key || '.collection.properties.currency') AS currency,
+    JSON_VALUE(jd.data_json, '$.properties.' || fk.key || '.collection.properties.domicile') AS domicile
   FROM fund_keys fk
   JOIN properties_extracted jd ON fk.notification_id = jd.notification_id
 )
@@ -39,7 +40,7 @@ SELECT
   pe.firstName,
   pe.lastName,
   fd.fund_key,
-  JSON_VALUE(fd.fund_properties_json, '$.currency') AS currency,
-  JSON_VALUE(fd.fund_properties_json, '$.domicile') AS domicile
+  fd.currency,
+  fd.domicile
 FROM fund_details fd
 JOIN properties_extracted pe ON fd.notification_id = pe.notification_id;
