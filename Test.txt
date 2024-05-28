@@ -19,7 +19,6 @@ fund_keys AS (
   SELECT 
     id,
     draftid,
-    properties_json,
     key
   FROM properties_extracted,
     JSON_TABLE(
@@ -28,7 +27,7 @@ fund_keys AS (
       COLUMNS (
         key VARCHAR2(4000) PATH 'lax $.*'
       )
-    )
+    ) jt
   WHERE key LIKE 'funddetails%'
 ),
 fund_details AS (
@@ -36,8 +35,9 @@ fund_details AS (
     fk.id,
     fk.draftid,
     fk.key AS fund_key,
-    JSON_QUERY(fk.properties_json, '$.' || fk.key || '.collection.properties') AS fund_properties_json
+    JSON_QUERY(jd.properties_json, '$.' || fk.key || '.collection.properties') AS fund_properties_json
   FROM fund_keys fk
+  JOIN properties_extracted jd ON fk.id = jd.id AND fk.draftid = jd.draftid
 )
 SELECT 
   fd.id,
