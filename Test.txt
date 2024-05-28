@@ -2,6 +2,7 @@ WITH json_data AS (
   SELECT 
     id,
     name,
+    clob_column,
     JSON_QUERY(clob_column, '$.data') AS data_json
   FROM your_table
 ),
@@ -9,30 +10,30 @@ fund_keys AS (
   SELECT 
     id,
     name,
-    json_key.key AS key
+    key
   FROM json_data,
     JSON_TABLE(
       data_json,
       '$'
       COLUMNS (
-        key VARCHAR2(4000) PATH 'lax $.*.key' -- Using lax mode
+        key VARCHAR2(4000) PATH 'lax $.*'
       )
-    ) json_key
+    )
+  WHERE key LIKE 'funddetails%'
 ),
 fund_details AS (
   SELECT 
     fk.id,
     fk.name,
-    fk.key AS key,
-    JSON_QUERY(jd.data_json, '$.' || fk.key || '.collection.properties' RETURNING CLOB) AS properties_json
+    fk.key AS fund_key,
+    JSON_QUERY(jd.data_json, '$.' || fk.key || '.collection.properties') AS properties_json
   FROM fund_keys fk
   JOIN json_data jd ON fk.id = jd.id
-  WHERE fk.key LIKE 'funddetails%'
 )
 SELECT 
   fd.id,
   fd.name,
-  fd.key AS fund_key,
+  fd.fund_key,
   JSON_VALUE(fd.properties_json, '$.field1' RETURNING VARCHAR2(4000)) AS field1,
   JSON_VALUE(fd.properties_json, '$.field2' RETURNING VARCHAR2(4000)) AS field2
 FROM fund_details fd;
