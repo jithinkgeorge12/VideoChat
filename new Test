@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Encrypt and Base64 Encode
+FILE_CONTENT="<pem file content>"
+ENCRYPTED_CONTENT=$(echo "$FILE_CONTENT" | openssl enc -aes-256-cbc -base64 -A -salt -pass pass:Pass1 | tr -d '\n')
+echo "Encrypted Content: $ENCRYPTED_CONTENT"
+
+# Decrypt and Base64 Decode
+DECRYPTED_CONTENT=$(echo "$ENCRYPTED_CONTENT" | openssl enc -base64 -d | openssl enc -d -aes-256-cbc -salt -pass pass:Pass1)
+echo "Decrypted Content: $DECRYPTED_CONTENT"
