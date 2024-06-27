@@ -1,5 +1,4 @@
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 const Download = {
   generateExcel: (rawData, fundGroup) => {
@@ -50,15 +49,25 @@ const prepareDataForDownload = (rawData, fundGroup) => {
 
 const downloadExcel = (data) => {
   const wb = generateWorkbook(data);
-  const wbout = writeWorkbook(wb);
+  const wbout = writeWorkbook(wb, 'D24.xlsx');
 
-  saveAs(wbout, 'D24.xlsx'); // Using FileSaver.js for saving the file as D24.xlsx
+  // Trigger download
+  const url = window.URL.createObjectURL(wbout);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'D24.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 0);
 };
 
 const generateWorkbook = (data) => {
   const ws = XLSX.utils.json_to_sheet(data);
 
-  // Set column widths based on content length + additional buffer
+  // Set column widths based on content length
   const colWidths = [
     { wch: 12 }, // ref column width (8 characters + 4 for buffer)
     { wch: 6 },  // code column width
@@ -68,46 +77,13 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Apply header row style (bold, Calibri, size 11)
-  applyHeaderStyle(ws, 'A1:D1');
-
-  // Apply body cell style (Calibri, size 11)
-  applyBodyStyle(ws, 'A2:D' + (data.length + 1));
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   return wb;
 };
 
-const writeWorkbook = (wb) => {
-  return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' }); // Use 'xlsx' for Excel format
-};
-
-const applyHeaderStyle = (ws, range) => {
-  const rangeArray = XLSX.utils.decode_range(range);
-  for (let C = rangeArray.s.c; C <= rangeArray.e.c; ++C) {
-    const cellAddress = XLSX.utils.encode_cell({ r: rangeArray.s.r, c: C });
-    const cell = ws[cellAddress];
-    if (!cell || !cell.s) cell.s = {};
-    Object.assign(cell.s, {
-      font: { bold: true, sz: 11, name: 'Calibri' },
-      alignment: { horizontal: 'center', vertical: 'center' }
-    });
-  }
-};
-
-const applyBodyStyle = (ws, range) => {
-  const rangeArray = XLSX.utils.decode_range(range);
-  for (let R = rangeArray.s.r; R <= rangeArray.e.r; ++R) {
-    for (let C = rangeArray.s.c; C <= rangeArray.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = ws[cellAddress];
-      if (!cell || !cell.s) cell.s = {};
-      Object.assign(cell.s, {
-        font: { sz: 11, name: 'Calibri' }
-      });
-    }
-  }
+const writeWorkbook = (wb, filename) => {
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
 };
 
 export default Download;
