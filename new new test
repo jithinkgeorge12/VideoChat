@@ -10,6 +10,9 @@ const MyGridComponent = () => {
     { dates: '2024-06-29T00:00:00', location: 'Los Angeles' },
   ]);
 
+  // State to track error messages for date columns
+  const [dateErrors, setDateErrors] = useState([]);
+
   // Grid column definitions
   const columnDefs = [
     { headerName: 'Dates', field: 'dates', sortable: true, filter: true, editable: true, cellClass: 'date-cell', valueFormatter: dateFormatter },
@@ -54,17 +57,24 @@ const MyGridComponent = () => {
       const isValidDate = /^(\d{2})-(\d{2})-(\d{4})$/.test(newValue);
       
       if (!isValidDate) {
-        // Show error message and apply red color to the cell
-        const cellWithError = document.querySelector(`.ag-cell[col-id="${colDef.field}"][row-index="${rowIndex}"]`);
-        if (cellWithError) {
-          cellWithError.classList.add('error-cell');
-        }
-        
-        // Optionally, show a message or alert
+        // Add error message for the cell
+        setDateErrors(prevErrors => ({
+          ...prevErrors,
+          [colDef.field]: 'Enter date in format dd-mm-yyyy',
+        }));
+
+        // Optionally, show a message or alert in the UI near the cell
         console.error(`Invalid date format. Please enter date in dd-mm-yyyy format.`);
         return;
       }
       
+      // Remove error message for the cell
+      setDateErrors(prevErrors => {
+        const updatedErrors = { ...prevErrors };
+        delete updatedErrors[colDef.field];
+        return updatedErrors;
+      });
+
       // Create a shallow copy of the row being edited
       const updatedRow = { ...updatedRowData[rowIndex] };
       
@@ -91,8 +101,19 @@ const MyGridComponent = () => {
         columnDefs={columnDefs}
         rowData={rowData}
         onCellValueChanged={handleCellValueChanged}
+        onGridReady={(params) => {
+          // Resize columns to fit grid width
+          params.api.sizeColumnsToFit();
+        }}
       />
       <button onClick={handleAddRow}>Add Row</button>
+      {Object.keys(dateErrors).length > 0 && (
+        <div style={{ marginTop: '10px', color: 'red' }}>
+          {Object.keys(dateErrors).map((colId, index) => (
+            <p key={index}>{dateErrors[colId]}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
