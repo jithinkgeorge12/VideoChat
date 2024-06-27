@@ -79,24 +79,28 @@ const generateWorkbook = (data) => {
 };
 
 const writeWorkbook = (wb) => {
-  return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 };
 
 const triggerDownload = (wbout, fileName) => {
-  const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
+  if (window.navigator.msSaveOrOpenBlob) {
+    window.navigator.msSaveBlob(blob, fileName);
+  } else {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
 
-  document.body.appendChild(a);
-  a.click();
+    document.body.appendChild(a);
+    a.click();
 
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 0);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
 };
 
 export default Download;
