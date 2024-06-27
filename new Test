@@ -72,6 +72,7 @@ const generateWorkbook = (data) => {
     font: { sz: 11, name: 'Calibri' },
   };
 
+  // Apply body style to all cells in the worksheet
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -86,10 +87,12 @@ const generateWorkbook = (data) => {
     font: { bold: true, sz: 11, name: 'Calibri' },
   };
 
-  const headerRange = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: ws['!cols'].length - 1 } });
-  ws[headerRange].forEach(cell => {
-    cell.s = headerStyle;
-  });
+  const headerRange = { s: { r: 0, c: 0 }, e: { r: 0, c: ws['!cols'].length - 1 } };
+  for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+    const cellAddress = XLSX.utils.encode_cell({ r: headerRange.s.r, c: C });
+    if (!ws[cellAddress]) continue;
+    ws[cellAddress].s = headerStyle;
+  }
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
