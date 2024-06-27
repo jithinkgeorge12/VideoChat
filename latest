@@ -51,17 +51,7 @@ const downloadExcel = (data) => {
   const wb = generateWorkbook(data);
   const wbout = writeWorkbook(wb);
 
-  // Trigger download
-  const url = window.URL.createObjectURL(wbout);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'D24.xlsx';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 0);
+  triggerDownload(wbout, 'D24.xlsx');
 };
 
 const generateWorkbook = (data) => {
@@ -90,6 +80,23 @@ const generateWorkbook = (data) => {
 
 const writeWorkbook = (wb) => {
   return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
+};
+
+const triggerDownload = (wbout, fileName) => {
+  const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
 };
 
 export default Download;
