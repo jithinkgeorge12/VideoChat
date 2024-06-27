@@ -1,14 +1,14 @@
 import * as XLSX from 'xlsx';
 
 const Download = {
-  generateExcel: (rawdata, group) => {
-    console.log('rawdata:', rawdata);
-    console.log('group:', group);
+  generateExcel: (rawData, fundGroup) => {
+    console.log('rawData:', rawData);
+    console.log('fundGroup:', fundGroup);
 
-    const sortedGroup = sortGroup(group); // Sort group alphabetically
-    console.log('Sorted group:', sortedGroup);
+    const sortedFundGroup = sortFundGroup(fundGroup); // Sort fundGroup alphabetically
+    console.log('Sorted fundGroup:', sortedFundGroup);
 
-    const dataForDownload = prepareDataForDownload(rawdata, sortedGroup);
+    const dataForDownload = prepareDataForDownload(rawData, sortedFundGroup);
     console.log('Data for download:', dataForDownload);
 
     if (dataForDownload.length > 0) {
@@ -19,41 +19,35 @@ const Download = {
   }
 };
 
-const sortGroup = (group) => {
-  return group.sort((a, b) => a.localeCompare(b));
+const sortFundGroup = (fundGroup) => {
+  return fundGroup.sort((a, b) => a.localeCompare(b));
 };
 
-const prepareDataForDownload = (rawdata, group) => {
+const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
-  rawdata.forEach((item, index) => {
-    console.log('Processing item:', item);
+  fundGroup.forEach((code) => {
+    rawData.forEach((item, index) => {
+      const date = new Date(item.dates);
+      console.log('Raw date:', date);
 
-    group.forEach((code) => {
-      console.log('Processing code:', code);
+      if (!isNaN(date.getTime())) {
+        const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`;
+        console.log('Formatted date:', formattedDate);
 
-      if (item.location === 'IRELAND' && item.code === code) {
         const ref = `a${data.length + 1}`.padStart(9, '0');
         console.log('Ref:', ref);
 
-        const date = new Date(item.date);
-        console.log('Raw date:', date);
+        const row = {
+          ref,
+          code,
+          date: formattedDate,
+          valuation: 0,
+        };
 
-        if (!isNaN(date.getTime())) {
-          const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`;
-          console.log('Formatted date:', formattedDate);
-
-          const row = {
-            ref,
-            code,
-            date: formattedDate,
-            valuation: 0,
-          };
-
-          data.push(row);
-        } else {
-          console.warn(`Invalid date format found for item:`, item);
-        }
+        data.push(row);
+      } else {
+        console.warn(`Invalid date format found for item:`, item);
       }
     });
   });
