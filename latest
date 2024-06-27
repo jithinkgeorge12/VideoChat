@@ -67,11 +67,18 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Set column headers
+  // Set column headers with bold style
   ws['A1'].v = 'Ref'; // Update header for column A
   ws['B1'].v = 'Code'; // Update header for column B
   ws['C1'].v = 'Date'; // Update header for column C
   ws['D1'].v = 'Valuation'; // Update header for column D
+
+  const headerStyle = {
+    font: { bold: true, sz: 11, name: 'Calibri' },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+
+  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', headerStyle); // Apply style to headers
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
