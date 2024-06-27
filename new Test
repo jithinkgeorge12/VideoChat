@@ -17,11 +17,18 @@ const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
   rawData.forEach((item, index) => {
+    console.log('Processing item:', item);
+
     fundGroup.forEach((code) => {
+      console.log('Processing code:', code);
+
       if (item.code === code && item.location === 'IRELAND') {
         const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
         const date = new Date(item.dates); // Assuming dates is the correct field name
+        console.log('Raw date:', date);
+
         const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
+        console.log('Formatted date:', formattedDate);
 
         const row = {
           ref,
@@ -39,6 +46,8 @@ const prepareDataForDownload = (rawData, fundGroup) => {
 };
 
 const downloadExcel = (data) => {
+  console.log('Generating Excel with data:', data);
+
   const wb = generateWorkbook(data);
   const wbout = writeWorkbook(wb);
 
