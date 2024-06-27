@@ -59,7 +59,7 @@ const generateWorkbook = (data) => {
 
   // Set column widths based on content length + additional buffer
   const colWidths = [
-    { wch: 12 }, // ref column width (8 characters + 3)
+    { wch: 12 }, // ref column width (8 characters + 4 for buffer)
     { wch: 6 },  // code column width
     { wch: 8 },  // date column width
     { wch: 10 }, // valuation column width
@@ -67,32 +67,14 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Set style for the entire worksheet (Calibri, size 11)
-  const defaultStyle = {
-    font: { sz: 11, name: 'Calibri' },
-  };
-
-  // Apply default style to all cells in the worksheet
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let R = range.s.r; R <= range.e.r; ++R) {
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellAddress]) continue;
-      ws[cellAddress].s = defaultStyle;
-    }
-  }
-
   // Set header row styles (bold)
   const headerStyle = {
     font: { bold: true, sz: 11, name: 'Calibri' },
   };
 
-  const headerRange = { s: { r: 0, c: 0 }, e: { r: 0, c: ws['!cols'].length - 1 } };
-  for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-    const cellAddress = XLSX.utils.encode_cell({ r: headerRange.s.r, c: C });
-    if (!ws[cellAddress]) continue;
-    ws[cellAddress].s = headerStyle;
-  }
+  // Apply header style to the first row
+  XLSX.utils.sheet_add_aoa(ws, [['ref', 'code', 'date', 'valuation']], { origin: 'A1' });
+  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', headerStyle);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
