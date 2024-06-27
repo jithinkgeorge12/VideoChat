@@ -2,14 +2,9 @@ import * as XLSX from 'xlsx';
 
 const Download = {
   generateExcel: (rawData, fundGroup) => {
-    console.log('rawData:', rawData);
-    console.log('fundGroup:', fundGroup);
-
     const sortedFundGroup = sortFundGroup(fundGroup); // Sort fundGroup alphabetically
-    console.log('Sorted fundGroup:', sortedFundGroup);
 
     const dataForDownload = prepareDataForDownload(rawData, sortedFundGroup);
-    console.log('Data for download:', dataForDownload);
 
     if (dataForDownload.length > 0) {
       downloadExcel(dataForDownload);
@@ -29,14 +24,11 @@ const prepareDataForDownload = (rawData, fundGroup) => {
   fundGroup.forEach((code) => {
     rawData.forEach((item, index) => {
       const date = new Date(item.dates);
-      console.log('Raw date:', date);
 
       if (!isNaN(date.getTime())) {
         const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`;
-        console.log('Formatted date:', formattedDate);
 
         const ref = `a${(data.length + 1).toString().padStart(8, '0')}`;
-        console.log('Ref:', ref);
 
         const row = {
           ref,
@@ -56,8 +48,6 @@ const prepareDataForDownload = (rawData, fundGroup) => {
 };
 
 const downloadExcel = (data) => {
-  console.log('Generating Excel with data:', data);
-
   const wb = generateWorkbook(data);
   const wbout = writeWorkbook(wb);
 
@@ -66,6 +56,17 @@ const downloadExcel = (data) => {
 
 const generateWorkbook = (data) => {
   const ws = XLSX.utils.json_to_sheet(data);
+
+  // Set column widths based on content length + additional buffer
+  const colWidths = [
+    { wch: 12 }, // ref column width (8 characters + 3)
+    { wch: 6 },  // code column width
+    { wch: 8 },  // date column width
+    { wch: 10 }, // valuation column width
+  ];
+
+  ws['!cols'] = colWidths;
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   return wb;
