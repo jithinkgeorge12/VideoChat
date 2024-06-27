@@ -34,7 +34,7 @@ const prepareDataForDownload = (rawData, fundGroup) => {
           ref,
           code,
           date: formattedDate,
-          valuation: 0,
+          Valuation: 0, // Set as numeric zero
         };
 
         data.push(row);
@@ -76,6 +76,12 @@ const generateWorkbook = (data) => {
   ];
 
   ws['!cols'] = colWidths;
+
+  // Set column headers
+  ws['A1'].v = 'Ref'; // Update header for column A
+  ws['B1'].v = 'Code'; // Update header for column B
+  ws['C1'].v = 'Date'; // Update header for column C
+  ws['D1'].v = 'Valuation'; // Update header for column D
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
