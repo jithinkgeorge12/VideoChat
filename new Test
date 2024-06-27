@@ -1,28 +1,28 @@
 import * as XLSX from 'xlsx';
 
 const Download = {
-  generateExcel: (rawdata, group) => {
-    const sortedGroup = sortGroup(group); // Sort group alphabetically
+  generateExcel: (rawData, fundGroup) => {
+    const sortedGroup = sortGroup(fundGroup); // Sort fundGroup alphabetically
 
-    const dataForDownload = prepareDataForDownload(rawdata, sortedGroup);
+    const dataForDownload = prepareDataForDownload(rawData, sortedGroup);
 
     downloadExcel(dataForDownload);
   }
 };
 
-const sortGroup = (group) => {
-  return group.sort((a, b) => a.localeCompare(b));
+const sortGroup = (fundGroup) => {
+  return fundGroup.sort((a, b) => a.localeCompare(b));
 };
 
-const prepareDataForDownload = (rawdata, group) => {
+const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
-  rawdata.forEach((item, index) => {
-    group.forEach((code) => {
-      const ref = `a${data.length + 1}`.padStart(9, '0');
+  rawData.forEach((item, index) => {
+    fundGroup.forEach((code, idx) => {
+      const ref = `a${index * fundGroup.length + idx + 1}`.padStart(10, '0'); // Adjusted ref format
       const date = new Date(item.date);
-      const formattedDate = `${date.getDate()}${date.getMonth() + 1}${date.getFullYear() % 100}`;
-      
+      const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${date.getFullYear() % 100}`; // Formatted date as ddmmyy
+
       const row = {
         ref,
         code,
