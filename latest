@@ -68,20 +68,11 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Set header row style (bold, Calibri, size 11)
-  const headerRow = XLSX.utils.encode_row(0);
-  XLSX.utils.sheet_format_rows(ws, [{ hpx: 20 }], headerRow); // Set header row height
-  const headerStyle = {
-    font: { bold: true, sz: 11, name: 'Calibri' },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  applyCellStyle(ws, 'A1:D1', headerStyle);
+  // Apply header row style (bold, Calibri, size 11)
+  applyHeaderStyle(ws, 'A1:D1');
 
-  // Set body cell style (Calibri, size 11)
-  const bodyStyle = {
-    font: { sz: 11, name: 'Calibri' },
-  };
-  applyCellStyle(ws, 'A2:D' + (data.length + 1), bodyStyle);
+  // Apply body cell style (Calibri, size 11)
+  applyBodyStyle(ws, 'A2:D' + (data.length + 1));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
@@ -92,14 +83,29 @@ const writeWorkbook = (wb) => {
   return XLSX.write(wb, { bookType: 'xls', type: 'binary' });
 };
 
-const applyCellStyle = (ws, range, style) => {
+const applyHeaderStyle = (ws, range) => {
   const rangeArray = XLSX.utils.decode_range(range);
-  for (let R = rangeArray.s.r; R <= rangeArray.e.r; R++) {
-    for (let C = rangeArray.s.c; C <= rangeArray.e.c; C++) {
+  for (let C = rangeArray.s.c; C <= rangeArray.e.c; ++C) {
+    const cellAddress = XLSX.utils.encode_cell({ r: rangeArray.s.r, c: C });
+    const cell = ws[cellAddress];
+    if (!cell || !cell.s) cell.s = {};
+    Object.assign(cell.s, {
+      font: { bold: true, sz: 11, name: 'Calibri' },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+};
+
+const applyBodyStyle = (ws, range) => {
+  const rangeArray = XLSX.utils.decode_range(range);
+  for (let R = rangeArray.s.r; R <= rangeArray.e.r; ++R) {
+    for (let C = rangeArray.s.c; C <= rangeArray.e.c; ++C) {
       const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
       const cell = ws[cellAddress];
-      if (!cell) continue;
-      Object.assign(cell, { s: style });
+      if (!cell || !cell.s) cell.s = {};
+      Object.assign(cell.s, {
+        font: { sz: 11, name: 'Calibri' }
+      });
     }
   }
 };
