@@ -73,12 +73,17 @@ const generateWorkbook = (data) => {
   ws['C1'].v = 'Date'; // Update header for column C
   ws['D1'].v = 'Valuation'; // Update header for column D
 
-  const headerStyle = {
+  // Apply style to headers
+  const headerCellStyle = {
     font: { bold: true, sz: 11, name: 'Calibri' },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
 
-  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', headerStyle); // Apply style to headers
+  // Apply style to headers
+  applyCellStyle(ws['A1'], headerCellStyle);
+  applyCellStyle(ws['B1'], headerCellStyle);
+  applyCellStyle(ws['C1'], headerCellStyle);
+  applyCellStyle(ws['D1'], headerCellStyle);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
@@ -108,6 +113,13 @@ const triggerDownload = (wbout, fileName) => {
       window.URL.revokeObjectURL(url);
     }, 0);
   }
+};
+
+// Function to apply cell style
+const applyCellStyle = (cell, style) => {
+  if (!cell || !style) return;
+  if (!cell.s) cell.s = {};
+  Object.assign(cell.s, style);
 };
 
 export default Download;
