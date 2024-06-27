@@ -68,18 +68,20 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Set header row styles (bold, Calibri, size 11)
+  // Set header row style (bold, Calibri, size 11)
+  const headerRow = XLSX.utils.encode_row(0);
+  XLSX.utils.sheet_format_rows(ws, [{ hpx: 20 }], headerRow); // Set header row height
   const headerStyle = {
     font: { bold: true, sz: 11, name: 'Calibri' },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
-  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', headerStyle);
+  applyCellStyle(ws, 'A1:D1', headerStyle);
 
-  // Set body cell styles (Calibri, size 11)
+  // Set body cell style (Calibri, size 11)
   const bodyStyle = {
     font: { sz: 11, name: 'Calibri' },
   };
-  XLSX.utils.sheet_set_range_style(ws, 'A2:D' + (data.length + 1), bodyStyle);
+  applyCellStyle(ws, 'A2:D' + (data.length + 1), bodyStyle);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
@@ -88,6 +90,18 @@ const generateWorkbook = (data) => {
 
 const writeWorkbook = (wb) => {
   return XLSX.write(wb, { bookType: 'xls', type: 'binary' });
+};
+
+const applyCellStyle = (ws, range, style) => {
+  const rangeArray = XLSX.utils.decode_range(range);
+  for (let R = rangeArray.s.r; R <= rangeArray.e.r; R++) {
+    for (let C = rangeArray.s.c; C <= rangeArray.e.c; C++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[cellAddress];
+      if (!cell) continue;
+      cell.s = style;
+    }
+  }
 };
 
 export default Download;
