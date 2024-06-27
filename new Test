@@ -2,12 +2,10 @@ import * as XLSX from 'xlsx';
 
 const Download = {
   generateExcel: (rawData, fundGroup) => {
-    const sortedGroup = sortGroup(fundGroup); // Sort fundGroup alphabetically
-
     console.log('rawData:', rawData);
     console.log('fundGroup:', fundGroup);
 
-    const dataForDownload = prepareDataForDownload(rawData, sortedGroup);
+    const dataForDownload = prepareDataForDownload(rawData, fundGroup);
 
     console.log('Data for download:', dataForDownload);
 
@@ -15,28 +13,26 @@ const Download = {
   }
 };
 
-const sortGroup = (fundGroup) => {
-  return fundGroup.sort((a, b) => a.localeCompare(b));
-};
-
 const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
-  rawData.forEach((item) => {
-    if (fundGroup.includes(item.code)) {
-      const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
-      const date = new Date(item.date);
-      const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
+  rawData.forEach((item, index) => {
+    fundGroup.forEach((code) => {
+      if (item.code === code && item.location === 'IRELAND') {
+        const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
+        const date = new Date(item.dates); // Assuming dates is the correct field name
+        const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
 
-      const row = {
-        ref,
-        code: item.code,
-        date: formattedDate,
-        valuation: 0,
-      };
+        const row = {
+          ref,
+          code,
+          date: formattedDate,
+          valuation: 0,
+        };
 
-      data.push(row);
-    }
+        data.push(row);
+      }
+    });
   });
 
   return data;
