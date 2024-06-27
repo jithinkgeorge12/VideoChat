@@ -52,7 +52,7 @@ const downloadExcel = (data) => {
   const wb = generateWorkbook(data);
   const wbout = writeWorkbook(wb);
 
-  saveAs(wbout, 'D24.xls'); // Using FileSaver.js for saving the file
+  saveAs(wbout, 'D24.xlsx'); // Using FileSaver.js for saving the file as D24.xlsx
 };
 
 const generateWorkbook = (data) => {
@@ -80,7 +80,7 @@ const generateWorkbook = (data) => {
 };
 
 const writeWorkbook = (wb) => {
-  return XLSX.write(wb, { bookType: 'xls', type: 'binary' });
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' }); // Use 'xlsx' for Excel format
 };
 
 const applyHeaderStyle = (ws, range) => {
