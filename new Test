@@ -22,23 +22,21 @@ const sortGroup = (fundGroup) => {
 const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
-  rawData.forEach((item, index) => {
-    fundGroup.forEach((code, idx) => {
-      if (item.code === code) {
-        const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
-        const date = new Date(item.date);
-        const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
+  rawData.forEach((item) => {
+    if (fundGroup.includes(item.code)) {
+      const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
+      const date = new Date(item.date);
+      const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
 
-        const row = {
-          ref,
-          code,
-          date: formattedDate,
-          valuation: 0,
-        };
+      const row = {
+        ref,
+        code: item.code,
+        date: formattedDate,
+        valuation: 0,
+      };
 
-        data.push(row);
-      }
-    });
+      data.push(row);
+    }
   });
 
   return data;
