@@ -49,7 +49,7 @@ const prepareDataForDownload = (rawData, fundGroup) => {
 
 const downloadExcel = (data) => {
   const wb = generateWorkbook(data);
-  const wbout = writeWorkbook(wb, 'D24.xlsx');
+  const wbout = writeWorkbook(wb);
 
   // Trigger download
   const url = window.URL.createObjectURL(wbout);
@@ -88,7 +88,7 @@ const generateWorkbook = (data) => {
   return wb;
 };
 
-const writeWorkbook = (wb, filename) => {
+const writeWorkbook = (wb) => {
   return XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
 };
 
