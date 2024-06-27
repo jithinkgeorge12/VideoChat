@@ -70,7 +70,7 @@ const generateWorkbook = (data) => {
   // Set header row styles (bold, Calibri, size 11)
   const headerCellStyle = {
     font: { bold: true, sz: 11, name: 'Calibri' },
-    alignment: { horizontal: 'center' },
+    alignment: { horizontal: 'center', vertical: 'center' },
   };
 
   // Apply header style to each cell in the header row ('A1:D1')
@@ -85,7 +85,7 @@ const generateWorkbook = (data) => {
     font: { sz: 11, name: 'Calibri' },
   };
 
-  // Apply body style to all cells in the worksheet
+  // Apply body style to all cells in the worksheet (excluding header row)
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r + 1; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
