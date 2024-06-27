@@ -1,104 +1,59 @@
-import * as XLSX from 'xlsx';
+body {
+  font-family: Calibri, Arial, sans-serif;
+  font-size: 11px;
+}
 
-const Download = {
-  generateExcel: (rawData, fundGroup) => {
-    const sortedFundGroup = sortFundGroup(fundGroup); // Sort fundGroup alphabetically
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
 
-    const dataForDownload = prepareDataForDownload(rawData, sortedFundGroup);
+.dropdown-container {
+  margin-bottom: 15px;
+}
 
-    if (dataForDownload.length > 0) {
-      downloadExcel(dataForDownload);
-    } else {
-      console.error('No data found for download.');
-    }
-  }
-};
+label {
+  display: block;
+  margin-bottom: 5px;
+}
 
-const sortFundGroup = (fundGroup) => {
-  return fundGroup.sort((a, b) => a.localeCompare(b));
-};
+select {
+  width: 100%;
+  padding: 8px;
+  font-size: 11px;
+}
 
-const prepareDataForDownload = (rawData, fundGroup) => {
-  let data = [];
+button {
+  display: block;
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
-  fundGroup.forEach((code) => {
-    rawData.forEach((item, index) => {
-      const date = new Date(item.dates);
+button:hover {
+  background-color: #0056b3;
+}
 
-      if (!isNaN(date.getTime())) {
-        const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`;
+.message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+}
 
-        const ref = `a${(data.length + 1).toString().padStart(8, '0')}`;
+.message.error {
+  color: red;
+  background-color: #f8d7da;
+}
 
-        const row = {
-          ref,
-          code,
-          date: formattedDate,
-          valuation: 0,
-        };
-
-        data.push(row);
-      } else {
-        console.warn(`Invalid date format found for item:`, item);
-      }
-    });
-  });
-
-  return data;
-};
-
-const downloadExcel = (data) => {
-  const wb = generateWorkbook(data);
-  const wbout = writeWorkbook(wb);
-
-  triggerDownload(wbout);
-};
-
-const generateWorkbook = (data) => {
-  const ws = XLSX.utils.json_to_sheet(data);
-
-  // Set column widths based on content length + additional buffer
-  const colWidths = [
-    { wch: 12 }, // ref column width (8 characters + 4 for buffer)
-    { wch: 6 },  // code column width
-    { wch: 8 },  // date column width
-    { wch: 10 }, // valuation column width
-  ];
-
-  ws['!cols'] = colWidths;
-
-  // Set header row styles (bold)
-  const headerStyle = {
-    font: { bold: true, sz: 11, name: 'Calibri' },
-  };
-
-  // Apply header style to the first row
-  XLSX.utils.sheet_add_aoa(ws, [['ref', 'code', 'date', 'valuation']], { origin: 'A1' });
-  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', headerStyle);
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return wb;
-};
-
-const writeWorkbook = (wb) => {
-  return XLSX.write(wb, { bookType: 'xls', type: 'array' });
-};
-
-const triggerDownload = (wbout) => {
-  const blob = new Blob([wbout], { type: 'application/vnd.ms-excel' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'D24.xls'; // Set the filename here
-
-  document.body.appendChild(a);
-  a.click();
-
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 0);
-};
-
-export default Download;
+.message.success {
+  color: green;
+  background-color: #d4edda;
+}
