@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Download from './Download';
 
 const Home = () => {
-  const [rawdata] = useState([
+  const rawdata = [
     { date: "2024-06-25T00:00:00", location: "IRELAND" },
     { date: "2024-06-26T00:00:00", location: "IRELAND" },
     { date: "2024-06-27T00:00:00", location: "IRELAND" }
-  ]);
+  ];
 
-  const [group] = useState(['PQR', 'ABC', 'XYZ']); // Example group array, can be based on user input
+  const group = ['PQR', 'ABC', 'XYZ']; // Example group array, can be based on user input
 
   const handleDownloadClick = () => {
     Download.generateExcel(rawdata, group);
