@@ -1,22 +1,46 @@
-import React from 'react';
-import Download from './Download';
+import React, { useState } from 'react';
+import Download from './Download'; // Assuming you have Download module defined
+import './styles.css'; // Import your CSS file for styling
 
 const Home = () => {
-  const rawdata = [
-    { date: "2024-06-25T00:00:00", location: "IRELAND" },
-    { date: "2024-06-26T00:00:00", location: "IRELAND" },
-    { date: "2024-06-27T00:00:00", location: "IRELAND" }
-  ];
-
-  const group = ['PQR', 'ABC', 'XYZ']; // Example group array, can be based on user input
+  const [selectedFundGroup, setSelectedFundGroup] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleDownloadClick = () => {
-    Download.generateExcel(rawdata, group);
+    if (!selectedFundGroup) {
+      setErrorMessage('Please select at least one Fund Group from dropdown');
+      setSuccessMessage('');
+    } else {
+      Download.generateExcel(rawData, selectedFundGroup);
+      setErrorMessage('');
+      setSuccessMessage('The Pluto File is downloaded successfully');
+    }
+  };
+
+  const handleFundGroupChange = (event) => {
+    setSelectedFundGroup(event.target.value);
+    setErrorMessage('');
+    setSuccessMessage('');
   };
 
   return (
-    <div>
-      <button onClick={handleDownloadClick}>Generate Excel</button>
+    <div className="container">
+      <h1>Download Excel</h1>
+      <div className="dropdown-container">
+        <label htmlFor="fundGroup">Select Fund Group:</label>
+        <select id="fundGroup" value={selectedFundGroup} onChange={handleFundGroupChange}>
+          <option value="">Select Fund Group</option>
+          {/* Replace with actual options */}
+          <option value="ABC">ABC</option>
+          <option value="PQR">PQR</option>
+          <option value="XYZ">XYZ</option>
+        </select>
+      </div>
+      <button onClick={handleDownloadClick}>Download Excel</button>
+
+      {errorMessage && <div className="message error">{errorMessage}</div>}
+      {successMessage && <div className="message success">{successMessage}</div>}
     </div>
   );
 };
