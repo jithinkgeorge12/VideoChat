@@ -99,7 +99,7 @@ const applyCellStyle = (ws, range, style) => {
       const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
       const cell = ws[cellAddress];
       if (!cell) continue;
-      cell.s = style;
+      Object.assign(cell, { s: style });
     }
   }
 };
