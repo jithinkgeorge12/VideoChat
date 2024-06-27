@@ -35,7 +35,7 @@ const prepareDataForDownload = (rawData, fundGroup) => {
         const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`;
         console.log('Formatted date:', formattedDate);
 
-        const ref = `a${data.length + 1}`.padStart(9, '0');
+        const ref = `a${(data.length + 1).toString().padStart(8, '0')}`;
         console.log('Ref:', ref);
 
         const row = {
