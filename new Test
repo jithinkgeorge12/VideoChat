@@ -67,22 +67,22 @@ const generateWorkbook = (data) => {
 
   ws['!cols'] = colWidths;
 
-  // Set style for each cell in the worksheet to Calibri, size 11
-  const bodyStyle = {
+  // Set style for the entire worksheet (Calibri, size 11)
+  const defaultStyle = {
     font: { sz: 11, name: 'Calibri' },
   };
 
-  // Apply body style to all cells in the worksheet
+  // Apply default style to all cells in the worksheet
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellAddress]) continue;
-      ws[cellAddress].s = bodyStyle;
+      ws[cellAddress].s = defaultStyle;
     }
   }
 
-  // Set header row styles
+  // Set header row styles (bold)
   const headerStyle = {
     font: { bold: true, sz: 11, name: 'Calibri' },
   };
