@@ -1,1 +1,86 @@
 
+import React from 'react';
+
+class Download extends React.Component {
+  generateExcel = (rawdata, group) => {
+    const sortedGroup = this.sortGroup(group); // Sort group alphabetically
+
+    const dataForDownload = this.prepareDataForDownload(rawdata, sortedGroup);
+
+    this.downloadExcel(dataForDownload);
+  }
+
+  sortGroup = (group) => {
+    return group.sort((a, b) => a.localeCompare(b));
+  }
+
+  prepareDataForDownload = (rawdata, group) => {
+    let data = [];
+
+    rawdata.forEach((item, index) => {
+      group.forEach((code) => {
+        const ref = `a${data.length + 1}`.padStart(9, '0');
+        const date = new Date(item.date);
+        const formattedDate = `${date.getDate()}${date.getMonth() + 1}${date.getFullYear() % 100}`;
+        
+        const row = {
+          ref,
+          code,
+          date: formattedDate,
+          valuation: 0,
+        };
+
+        data.push(row);
+      });
+    });
+
+    return data;
+  }
+
+  downloadExcel = (data) => {
+    const wb = this.generateWorkbook(data);
+    const wbout = this.writeWorkbook(wb);
+
+    this.triggerDownload(wbout);
+  }
+
+  generateWorkbook = (data) => {
+    const wb = {
+      SheetNames: ['Sheet1'],
+      Sheets: {
+        'Sheet1': this.generateWorksheet(data),
+      },
+    };
+    return wb;
+  }
+
+  generateWorksheet = (data) => {
+    return XLSX.utils.json_to_sheet(data);
+  }
+
+  writeWorkbook = (wb) => {
+    return XLSX.write(wb, { bookType: 'xls', type: 'array' });
+  }
+
+  triggerDownload = (wbout) => {
+    const blob = new Blob([wbout], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'export.xls';
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
+
+  render() {
+    return null; // Download component doesn't render anything
+  }
+}
+
+export default new Download();
