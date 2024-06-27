@@ -1,6 +1,4 @@
-import React from 'react';
-
-const XLSX = require('xlsx'); // Assuming XLSX is imported at the top-level or globally
+import * as XLSX from 'xlsx';
 
 const Download = {
   generateExcel: (rawdata, group) => {
