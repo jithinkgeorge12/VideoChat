@@ -51,7 +51,7 @@ const downloadExcel = (data) => {
   const wb = generateWorkbook(data);
   const wbout = writeWorkbook(wb);
 
-  triggerDownload(wbout);
+  saveAs(wbout, 'D24.xls'); // Using FileSaver.js for saving the file
 };
 
 const generateWorkbook = (data) => {
@@ -68,33 +68,15 @@ const generateWorkbook = (data) => {
   ws['!cols'] = colWidths;
 
   // Set header row styles (bold, Calibri, size 11)
-  const headerCellStyle = {
+  XLSX.utils.sheet_set_range_style(ws, 'A1:D1', {
     font: { bold: true, sz: 11, name: 'Calibri' },
     alignment: { horizontal: 'center', vertical: 'center' },
-  };
-
-  // Apply header style to each cell in the header row ('A1:D1')
-  ['A1', 'B1', 'C1', 'D1'].forEach((cellAddress) => {
-    if (ws[cellAddress]) {
-      ws[cellAddress].s = headerCellStyle;
-    }
   });
 
   // Set body cell styles (Calibri, size 11)
-  const bodyCellStyle = {
+  XLSX.utils.sheet_set_range_style(ws, 'A2:D' + (data.length + 1), {
     font: { sz: 11, name: 'Calibri' },
-  };
-
-  // Apply body style to all cells in the worksheet (excluding header row)
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      if (ws[cellAddress]) {
-        ws[cellAddress].s = bodyCellStyle;
-      }
-    }
-  }
+  });
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
@@ -102,23 +84,7 @@ const generateWorkbook = (data) => {
 };
 
 const writeWorkbook = (wb) => {
-  return XLSX.write(wb, { bookType: 'xls', type: 'array' });
-};
-
-const triggerDownload = (wbout) => {
-  const blob = new Blob([wbout], { type: 'application/vnd.ms-excel' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'D24.xls'; // Set the filename here
-
-  document.body.appendChild(a);
-  a.click();
-
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 0);
+  return XLSX.write(wb, { bookType: 'xls', type: 'binary' });
 };
 
 export default Download;
