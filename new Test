@@ -2,39 +2,38 @@ import * as XLSX from 'xlsx';
 
 const Download = {
   generateExcel: (rawData, fundGroup) => {
-    const sortedData = sortData(rawData, fundGroup); // Sort rawData by fundGroup
+    const sortedGroup = sortGroup(fundGroup); // Sort fundGroup alphabetically
 
-    const dataForDownload = prepareDataForDownload(sortedData);
+    const dataForDownload = prepareDataForDownload(rawData, sortedGroup);
 
     downloadExcel(dataForDownload);
   }
 };
 
-const sortData = (rawData, fundGroup) => {
-  // Sort rawData by fundGroup
-  return rawData.sort((a, b) => {
-    if (fundGroup.indexOf(a.code) < fundGroup.indexOf(b.code)) return -1;
-    if (fundGroup.indexOf(a.code) > fundGroup.indexOf(b.code)) return 1;
-    return 0;
-  });
+const sortGroup = (fundGroup) => {
+  return fundGroup.sort((a, b) => a.localeCompare(b));
 };
 
-const prepareDataForDownload = (sortedData) => {
+const prepareDataForDownload = (rawData, fundGroup) => {
   let data = [];
 
-  sortedData.forEach((item, index) => {
-    const ref = `a${index + 1}`.padStart(9, '0'); // Adjusted ref format
-    const date = new Date(item.date);
-    const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
+  rawData.forEach((item, index) => {
+    fundGroup.forEach((code, idx) => {
+      if (item.code === code) {
+        const ref = `a${data.length + 1}`.padStart(9, '0'); // Adjusted ref format
+        const date = new Date(item.date);
+        const formattedDate = `${('0' + date.getDate()).slice(-2)}${('0' + (date.getMonth() + 1)).slice(-2)}${String(date.getFullYear()).slice(-2)}`; // Formatted date as ddmmyy
 
-    const row = {
-      ref,
-      code: item.code,
-      date: formattedDate,
-      valuation: 0,
-    };
+        const row = {
+          ref,
+          code,
+          date: formattedDate,
+          valuation: 0,
+        };
 
-    data.push(row);
+        data.push(row);
+      }
+    });
   });
 
   return data;
@@ -48,10 +47,17 @@ const downloadExcel = (data) => {
 };
 
 const generateWorkbook = (data) => {
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const wb = {
+    SheetNames: ['Sheet1'],
+    Sheets: {
+      'Sheet1': generateWorksheet(data),
+    },
+  };
   return wb;
+};
+
+const generateWorksheet = (data) => {
+  return XLSX.utils.json_to_sheet(data);
 };
 
 const writeWorkbook = (wb) => {
