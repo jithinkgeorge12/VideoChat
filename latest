@@ -34,7 +34,7 @@ const prepareDataForDownload = (rawData, fundGroup) => {
           ref,
           code,
           date: formattedDate,
-          Valuation: 0, // Set as numeric zero
+          Valuation: '0', // Set as string '0'
         };
 
         data.push(row);
