@@ -1,48 +1,100 @@
 import React, { useState } from 'react';
-import Download from './Download'; // Assuming you have Download module defined
-import './styles.css'; // Import your CSS file for styling
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-const Home = () => {
-  const [selectedFundGroup, setSelectedFundGroup] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+const MyGridComponent = () => {
+  // Define initial rowData (or fetch from API)
+  const [rowData, setRowData] = useState([
+    { dates: '2024-06-28T00:00:00', location: 'New York' },
+    { dates: '2024-06-29T00:00:00', location: 'Los Angeles' },
+  ]);
 
-  const handleDownloadClick = () => {
-    if (!selectedFundGroup) {
-      setErrorMessage('Please select at least one Fund Group from dropdown');
-      setSuccessMessage('');
-    } else {
-      Download.generateExcel(rawData, selectedFundGroup);
-      setErrorMessage('');
-      setSuccessMessage('The Pluto File is downloaded successfully');
+  // Grid column definitions
+  const columnDefs = [
+    { headerName: 'Dates', field: 'dates', sortable: true, filter: true, editable: true, cellClass: 'date-cell', valueFormatter: dateFormatter },
+    { headerName: 'Location', field: 'location', sortable: true, filter: true, editable: true },
+  ];
+
+  // Custom date formatter for AG Grid
+  function dateFormatter(params) {
+    // Retrieve the date string from rowData
+    const dateStr = params.value;
+    
+    // Parse the ISO date string to Date object
+    const date = new Date(dateStr);
+    
+    // Format the date to dd-mm-yyyy
+    if (!isNaN(date.getTime())) {
+      const day = ('0' + date.getDate()).slice(-2);
+      const month = ('0' + (date.getMonth() + 1)).slice(-2);
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+    
+    // Return empty string for invalid dates
+    return '';
+  }
+
+  // Function to handle cell value change
+  const handleCellValueChanged = (event) => {
+    console.log('Cell value changed:', event);
+    
+    // Extract information from the event
+    const { data, colDef, newValue } = event;
+    
+    // Create a shallow copy of the rowData array
+    const updatedRowData = [...rowData];
+    
+    // Find the index of the row being edited
+    const rowIndex = updatedRowData.findIndex(row => row === data);
+    
+    if (rowIndex > -1) {
+      // Validate date format
+      const isValidDate = /^(\d{2})-(\d{2})-(\d{4})$/.test(newValue);
+      
+      if (!isValidDate) {
+        // Show error message and apply red color to the cell
+        const cellWithError = document.querySelector(`.ag-cell[col-id="${colDef.field}"][row-index="${rowIndex}"]`);
+        if (cellWithError) {
+          cellWithError.classList.add('error-cell');
+        }
+        
+        // Optionally, show a message or alert
+        console.error(`Invalid date format. Please enter date in dd-mm-yyyy format.`);
+        return;
+      }
+      
+      // Create a shallow copy of the row being edited
+      const updatedRow = { ...updatedRowData[rowIndex] };
+      
+      // Update the specific field in the row with the new value
+      updatedRow[colDef.field] = newValue;
+      
+      // Update the rowData array with the edited row
+      updatedRowData[rowIndex] = updatedRow;
+      
+      // Update the state with the new rowData
+      setRowData(updatedRowData);
     }
   };
 
-  const handleFundGroupChange = (event) => {
-    setSelectedFundGroup(event.target.value);
-    setErrorMessage('');
-    setSuccessMessage('');
+  // Function to add a new row
+  const handleAddRow = () => {
+    const newRow = { dates: '', location: '' };
+    setRowData([...rowData, newRow]);
   };
 
   return (
-    <div className="container">
-      <h1>Download Excel</h1>
-      <div className="dropdown-container">
-        <label htmlFor="fundGroup">Select Fund Group:</label>
-        <select id="fundGroup" value={selectedFundGroup} onChange={handleFundGroupChange}>
-          <option value="">Select Fund Group</option>
-          {/* Replace with actual options */}
-          <option value="ABC">ABC</option>
-          <option value="PQR">PQR</option>
-          <option value="XYZ">XYZ</option>
-        </select>
-      </div>
-      <button onClick={handleDownloadClick}>Download Excel</button>
-
-      {errorMessage && <div className="message error">{errorMessage}</div>}
-      {successMessage && <div className="message success">{successMessage}</div>}
+    <div className="ag-theme-alpine" style={{ height: '400px', width: '100%' }}>
+      <AgGridReact
+        columnDefs={columnDefs}
+        rowData={rowData}
+        onCellValueChanged={handleCellValueChanged}
+      />
+      <button onClick={handleAddRow}>Add Row</button>
     </div>
   );
 };
 
-export default Home;
+export default MyGridComponent;
