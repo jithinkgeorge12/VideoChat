@@ -1,58 +1,35 @@
-import React, { useState, forwardRef, useImperativeHandle } from 'react';
-import { useGridCellEditing } from '@ag-grid-enterprise/core';
+function dateValueSetter(params) {
+  // Assuming params.newValue is in "dd-mm-yyyy" format
+  const parts = params.newValue.split('-');
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Month is zero-based in Date object
+  const year = parseInt(parts[2], 10);
+  
+  const newDate = new Date(year, month, day);
 
-const CustomDateEditor = forwardRef((props, ref) => {
-  const [value, setValue] = useState(props.value);
-
-  // Hook to interact with AG Grid's cell editing features
-  const cellEditing = useGridCellEditing();
-
-  // Update component state when props change (e.g., editing different cell)
-  if (value !== props.value) {
-    setValue(props.value);
+  if (!isNaN(newDate.getTime())) {
+    params.data.dates = newDate.toISOString(); // Store in ISO format
+    return true; // Return true to indicate successful value setting
   }
 
-  // Handle value change in the input field
-  const handleChange = (e) => {
-    setValue(e.target.value);
-  };
+  return false; // Return false to indicate failure to set value
+}
 
-  // Handle Enter key press to commit the edit
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      // Validate date format before committing the edit
-      if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
-        cellEditing.stopEditing(); // Commit the edit
-      } else {
-        console.error('Invalid date format. Please enter date in dd-mm-yyyy format.');
-      }
-    }
-  };
-
-  // Expose functions to AG Grid for cell editing
-  useImperativeHandle(ref, () => ({
-    getValue() {
-      return value;
-    },
-    afterGuiAttached() {
-      // Focus the input field when editor is attached
-      // This is optional based on your UI/UX needs
-      setTimeout(() => {
-        const input = document.querySelector('.custom-date-editor-input');
-        input && input.focus();
-      });
-    },
-  }));
-
-  return (
-    <input
-      className="custom-date-editor-input ag-input-field-input"
-      type="text"
-      value={value}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-    />
-  );
-});
-
-export default CustomDateEditor;
+const columnDefs = [
+  {
+    headerName: 'Dates',
+    field: 'dates',
+    sortable: true,
+    filter: true,
+    editable: true,
+    valueFormatter: dateFormatter, // Use the custom dateFormatter function for display
+    valueSetter: dateValueSetter, // Use the custom dateValueSetter function for editing
+  },
+  {
+    headerName: 'Location',
+    field: 'location',
+    sortable: true,
+    filter: true,
+    editable: true,
+  },
+];
