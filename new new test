@@ -2,69 +2,44 @@ import React, { useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { AllModules } from '@ag-grid-enterprise/all-modules'; // Ensure you import all AG Grid Enterprise modules
+import '@ag-grid-enterprise/all-modules/dist/styles/ag-grid.css';
+import '@ag-grid-enterprise/all-modules/dist/styles/ag-theme-alpine.css';
 
 const MyGridComponent = () => {
-  // Define initial rowData (or fetch from API)
   const [rowData, setRowData] = useState([
     { dates: '2024-06-28T00:00:00', location: 'New York' },
     { dates: '2024-06-29T00:00:00', location: 'Los Angeles' },
   ]);
 
-  // Grid column definitions
   const columnDefs = [
-    { headerName: 'Dates', field: 'dates', sortable: true, filter: true, editable: true, valueFormatter: dateFormatter },
+    {
+      headerName: 'Dates',
+      field: 'dates',
+      sortable: true,
+      filter: true,
+      editable: true,
+      cellEditor: 'agDateInput', // Use AG Grid Enterprise date picker editor
+      cellEditorParams: {
+        displayFormat: 'dd-mm-yyyy', // Set display format for the date picker
+        browserDatePicker: true, // Enable browser's native date picker if available
+      },
+    },
     { headerName: 'Location', field: 'location', sortable: true, filter: true, editable: true },
   ];
 
-  // Custom date formatter for AG Grid
-  function dateFormatter(params) {
-    // Retrieve the date string from rowData
-    const dateStr = params.value;
-    
-    // Parse the ISO date string to Date object
-    const date = new Date(dateStr);
-    
-    // Format the date to dd-mm-yyyy
-    if (!isNaN(date.getTime())) {
-      const day = ('0' + date.getDate()).slice(-2);
-      const month = ('0' + (date.getMonth() + 1)).slice(-2);
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    }
-    
-    // Return empty string for invalid dates
-    return '';
-  }
-
-  // Function to handle cell value change
   const handleCellValueChanged = (event) => {
-    console.log('Cell value changed:', event);
-    
-    // Extract information from the event
     const { data, colDef, newValue } = event;
-    
-    // Create a shallow copy of the rowData array
     const updatedRowData = [...rowData];
-    
-    // Find the index of the row being edited
-    const rowIndex = updatedRowData.findIndex(row => row === data);
-    
+    const rowIndex = updatedRowData.findIndex((row) => row === data);
     if (rowIndex > -1) {
-      // Create a shallow copy of the row being edited
       const updatedRow = { ...updatedRowData[rowIndex] };
-      
-      // Update the specific field in the row with the new value
       updatedRow[colDef.field] = newValue;
-      
-      // Update the rowData array with the edited row
       updatedRowData[rowIndex] = updatedRow;
-      
-      // Update the state with the new rowData
       setRowData(updatedRowData);
     }
   };
 
-  // Function to add a new row
   const handleAddRow = () => {
     const newRow = { dates: '', location: '' };
     setRowData([...rowData, newRow]);
@@ -76,6 +51,7 @@ const MyGridComponent = () => {
         columnDefs={columnDefs}
         rowData={rowData}
         onCellValueChanged={handleCellValueChanged}
+        modules={AllModules} // Ensure you pass all AG Grid Enterprise modules
       />
       <button onClick={handleAddRow}>Add Row</button>
     </div>
