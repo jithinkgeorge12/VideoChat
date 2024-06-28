@@ -1,89 +1,58 @@
-import React, { useState } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import { useGridCellEditing } from '@ag-grid-enterprise/core';
 
-const MyGridComponent = () => {
-  const [rowData, setRowData] = useState([
-    { dates: '2024-06-28T00:00:00', location: 'New York' },
-    { dates: '2024-06-29T00:00:00', location: 'Los Angeles' },
-  ]);
+const CustomDateEditor = forwardRef((props, ref) => {
+  const [value, setValue] = useState(props.value);
 
-  // Custom date formatter for AG Grid
-  function dateFormatter(params) {
-    // Retrieve the date string from rowData
-    const dateStr = params.value;
+  // Hook to interact with AG Grid's cell editing features
+  const cellEditing = useGridCellEditing();
 
-    // Parse the ISO date string to Date object
-    const date = new Date(dateStr);
-
-    // Format the date to dd-mm-yyyy
-    if (!isNaN(date.getTime())) {
-      const day = ('0' + date.getDate()).slice(-2);
-      const month = ('0' + (date.getMonth() + 1)).slice(-2);
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
-    }
-
-    // Return empty string for invalid dates
-    return '';
+  // Update component state when props change (e.g., editing different cell)
+  if (value !== props.value) {
+    setValue(props.value);
   }
 
-  // Custom cell editor for AG Grid
-  const CustomDateEditor = (props) => {
-    const [dateValue, setDateValue] = useState(props.value);
+  // Handle value change in the input field
+  const handleChange = (e) => {
+    setValue(e.target.value);
+  };
 
-    const handleChange = (e) => {
-      const { value } = e.target;
-      // Validate and format the date input (dd-mm-yyyy)
+  // Handle Enter key press to commit the edit
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      // Validate date format before committing the edit
       if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
-        setDateValue(value);
-        props.stopEditing(); // Complete editing when valid format is entered
+        cellEditing.stopEditing(); // Commit the edit
       } else {
-        // Optionally, show an error message or handle invalid input
         console.error('Invalid date format. Please enter date in dd-mm-yyyy format.');
       }
-    };
-
-    return <input type="text" value={dateValue} onChange={handleChange} />;
+    }
   };
 
-  const columnDefs = [
-    {
-      headerName: 'Dates',
-      field: 'dates',
-      sortable: true,
-      filter: true,
-      editable: true,
-      valueFormatter: dateFormatter, // Display format
-      cellEditorFramework: CustomDateEditor, // Custom editor for editing
+  // Expose functions to AG Grid for cell editing
+  useImperativeHandle(ref, () => ({
+    getValue() {
+      return value;
     },
-    { headerName: 'Location', field: 'location', sortable: true, filter: true, editable: true },
-  ];
-
-  // Function to handle cell value change in AG Grid
-  const handleCellValueChanged = (event) => {
-    const { data, colDef, newValue } = event;
-    const updatedRowData = rowData.map(row => (row === data ? { ...row, [colDef.field]: newValue } : row));
-    setRowData(updatedRowData);
-  };
-
-  // Function to add a new row
-  const handleAddRow = () => {
-    const newRow = { dates: '', location: '' };
-    setRowData(prevRowData => [...prevRowData, newRow]);
-  };
+    afterGuiAttached() {
+      // Focus the input field when editor is attached
+      // This is optional based on your UI/UX needs
+      setTimeout(() => {
+        const input = document.querySelector('.custom-date-editor-input');
+        input && input.focus();
+      });
+    },
+  }));
 
   return (
-    <div className="ag-theme-alpine" style={{ height: '400px', width: '100%' }}>
-      <AgGridReact
-        columnDefs={columnDefs}
-        rowData={rowData}
-        onCellValueChanged={handleCellValueChanged}
-      />
-      <button onClick={handleAddRow}>Add Row</button>
-    </div>
+    <input
+      className="custom-date-editor-input ag-input-field-input"
+      type="text"
+      value={value}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+    />
   );
-};
+});
 
-export default MyGridComponent;
+export default CustomDateEditor;
