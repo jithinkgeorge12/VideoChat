@@ -1,46 +1,89 @@
 import React, { useState } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-// Custom Cell Renderer for Dates
-const DateRenderer = ({ value }) => {
-  const formattedDate = formatDate(value); // Format date as dd-MM-yyyy
+const MyGridComponent = () => {
+  const [rowData, setRowData] = useState([
+    { dates: '2024-06-28T00:00:00', location: 'New York' },
+    { dates: '2024-06-29T00:00:00', location: 'Los Angeles' },
+  ]);
 
-  return <span>{formattedDate}</span>;
-};
+  // Custom date formatter for AG Grid
+  function dateFormatter(params) {
+    // Retrieve the date string from rowData
+    const dateStr = params.value;
 
-// Custom Cell Editor for Dates
-const DateEditor = ({ value, setValue, stopEditing }) => {
-  const [editedValue, setEditedValue] = useState(value);
+    // Parse the ISO date string to Date object
+    const date = new Date(dateStr);
 
-  const handleInputChange = (e) => {
-    setEditedValue(e.target.value);
+    // Format the date to dd-mm-yyyy
+    if (!isNaN(date.getTime())) {
+      const day = ('0' + date.getDate()).slice(-2);
+      const month = ('0' + (date.getMonth() + 1)).slice(-2);
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    // Return empty string for invalid dates
+    return '';
+  }
+
+  // Custom cell editor for AG Grid
+  const CustomDateEditor = (props) => {
+    const [dateValue, setDateValue] = useState(props.value);
+
+    const handleChange = (e) => {
+      const { value } = e.target;
+      // Validate and format the date input (dd-mm-yyyy)
+      if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
+        setDateValue(value);
+        props.stopEditing(); // Complete editing when valid format is entered
+      } else {
+        // Optionally, show an error message or handle invalid input
+        console.error('Invalid date format. Please enter date in dd-mm-yyyy format.');
+      }
+    };
+
+    return <input type="text" value={dateValue} onChange={handleChange} />;
   };
 
-  const handleInputBlur = () => {
-    setValue(editedValue);
-    stopEditing(); // Stop editing when input field loses focus
+  const columnDefs = [
+    {
+      headerName: 'Dates',
+      field: 'dates',
+      sortable: true,
+      filter: true,
+      editable: true,
+      valueFormatter: dateFormatter, // Display format
+      cellEditorFramework: CustomDateEditor, // Custom editor for editing
+    },
+    { headerName: 'Location', field: 'location', sortable: true, filter: true, editable: true },
+  ];
+
+  // Function to handle cell value change in AG Grid
+  const handleCellValueChanged = (event) => {
+    const { data, colDef, newValue } = event;
+    const updatedRowData = rowData.map(row => (row === data ? { ...row, [colDef.field]: newValue } : row));
+    setRowData(updatedRowData);
+  };
+
+  // Function to add a new row
+  const handleAddRow = () => {
+    const newRow = { dates: '', location: '' };
+    setRowData(prevRowData => [...prevRowData, newRow]);
   };
 
   return (
-    <input
-      type="text"
-      value={editedValue}
-      onChange={handleInputChange}
-      onBlur={handleInputBlur}
-      placeholder="dd-MM-yyyy"
-    />
+    <div className="ag-theme-alpine" style={{ height: '400px', width: '100%' }}>
+      <AgGridReact
+        columnDefs={columnDefs}
+        rowData={rowData}
+        onCellValueChanged={handleCellValueChanged}
+      />
+      <button onClick={handleAddRow}>Add Row</button>
+    </div>
   );
 };
 
-// Helper function to format date as dd-MM-yyyy
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr);
-  if (!isNaN(date.getTime())) {
-    const day = ('0' + date.getDate()).slice(-2);
-    const month = ('0' + (date.getMonth() + 1)).slice(-2);
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  }
-  return '';
-};
-
-export { DateRenderer, DateEditor };
+export default MyGridComponent;
