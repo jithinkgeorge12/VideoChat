@@ -1,47 +1,152 @@
-1. Business Results
-What is Eliel doing well?
+package com.example.curlapi.model;
 
-Eliel Oshuokameh has demonstrated strong design and development skills, successfully completing the design phase of the TA Helper project and making solid progress in the development phase. His attention to detail and commitment to delivering a user-friendly interface are evident in the design, which met all the project requirements after several revisions. The application is designed to significantly benefit both the UAT and Application Development (AD) teams by streamlining the process of modifying UAT profiles, which previously required manual database changes by the AD team. In terms of development, Eliel is progressing well and is on track to bring the project to a stage where it can be demoed. While his skills are good, they are not yet at an excellent level, but he has shown significant potential for growth. Eliel is also diligent in asking questions and seeking clarification whenever he encounters uncertainties, ensuring that he fully understands the project requirements and can deliver work that meets expectations.
-Areas of Opportunity and Development:
+public class CurlConnectivityResponse {
 
-While Eliel has a good foundation in both design and development, the actual coding work took longer than expected, primarily due to initial delays and the fact that the project, although not highly complex, couldn’t be fully accommodated within the internship's timeframe. A more proactive approach at the beginning could have allowed for more coding progress. Eliel could also benefit from improving his communication during group meetings; while he is active in one-on-one discussions and asks questions to clear his doubts, he tends to be less vocal in group settings, such as scrum meetings. Encouraging him to contribute more during these discussions will help him become a more integral part of the team and improve his overall effectiveness. Moving forward, Eliel should focus on enhancing his proactivity, time management, and group communication skills to ensure he maximizes his contributions within the available time.
-Ratings:
+    private String output;  // Output from the curl command
+    private String message; // A message that gives context (success, failure)
+    private int statusCode; // HTTP status code for the response
 
-Analytical Thinking: Strong
-Drive for Excellence: Outstanding
-Commercial Acumen: Fair
-Technical Skills: Strong
-2. Client/Customer/Stakeholder
-What is Eliel doing well?
+    // Constructor
+    public CurlConnectivityResponse(String output, String message, int statusCode) {
+        this.output = output;
+        this.message = message;
+        this.statusCode = statusCode;
+    }
 
-Eliel has a good understanding of the project’s objectives, which is reflected in the design of the TA Helper project. This tool will empower the UAT team to modify UAT profiles independently, thereby reducing their reliance on the Application Development team and improving efficiency. While Eliel did not directly interact with the UAT team, he effectively understood the requirements provided to him and aligned his work accordingly. His communication, particularly in written form through tools like Git and Bitbucket, has been clear and effective in tracking progress. Eliel is diligent in seeking out answers to any questions he has, ensuring that he fully understands the project requirements and expectations.
-Areas of Opportunity and Development:
+    // Getters and setters
+    public String getOutput() {
+        return output;
+    }
 
-Eliel can improve by being more proactive in initiating discussions, especially during the early stages of the project. This would help in identifying potential issues sooner and keeping the project on track. Additionally, while Eliel communicates well in one-on-one settings, he should aim to be more vocal during group meetings and discussions. By contributing more actively in these settings, he can ensure that his ideas and questions are heard by all stakeholders, leading to better alignment and collaboration. This will also help him build stronger relationships within the team, ensuring that all aspects of the project are fully understood and met.
-Ratings:
+    public void setOutput(String output) {
+        this.output = output;
+    }
 
-Communication: Fair
-3. Teamwork and Leadership
-What is Eliel doing well?
+    public String getMessage() {
+        return message;
+    }
 
-Eliel is highly motivated to develop his skills and has shown dedication to the project by working additional hours to make progress. His partnership skills are outstanding; he collaborates well with his team, is open to feedback, and shares knowledge readily. Eliel’s willingness to ask questions and clarify his doubts during one-on-one interactions is a strong point, as it shows his commitment to understanding the project thoroughly and ensuring that he delivers quality work. His collaborative approach has been instrumental in advancing the project, particularly during the design phase, and now as he pushes forward with development.
-Areas of Opportunity and Development:
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-While Eliel is a strong team player and communicates well in one-on-one settings, he could benefit from taking more initiative and being more vocal in group settings, such as scrum meetings. By actively participating in these discussions, Eliel can contribute his ideas, ask questions, and help steer the team toward successful project completion. This will not only enhance his visibility within the team but also foster a more collaborative environment where everyone feels encouraged to share their insights. Additionally, taking on a more proactive leadership role early in the project lifecycle would help him manage tasks more effectively and ensure that both design and development are completed within the set timelines.
-Ratings:
+    public int getStatusCode() {
+        return statusCode;
+    }
 
-Motivation to Develop: Strong
-Partnership: Outstanding
-4. Risk, Controls, and Conduct
-What is Eliel doing well?
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+}
 
-Eliel consistently exhibits strong integrity in his work. He follows protocols diligently and ensures that his work adheres to the required standards. His careful handling of project setup, understanding of the existing codebase, and attention to business functionalities reflect his commitment to delivering quality work while maintaining compliance with company standards. Eliel is also good at asking questions and seeking clarification, which ensures that he understands the risks involved in his work and can address them appropriately. He is progressing well in his coding work and is focused on delivering as much as possible in the remaining time.
-Areas of Opportunity and Development:
 
-While Eliel has demonstrated strong integrity and sound judgment, he could enhance his effectiveness by being more proactive in identifying potential risks early in the project. By considering the broader implications of his work and anticipating challenges, Eliel can better safeguard the project’s integrity and ensure that it adheres to best practices throughout its lifecycle. Additionally, improving his communication in group settings would allow him to contribute more to discussions about risk and controls, thereby helping the team to anticipate and mitigate potential issues more effectively.
-Ratings:
 
-Integrity: Strong
-5. Overall Recommendation
-Summary of Feedback:
-Eliel Oshuokameh has shown significant potential as a software engineer, particularly in his design capabilities and analytical approach. He has made good progress in the development phase, and while the project is still in progress, Eliel is on track to bring it to a stage where it can be demoed. His skills in both design and development are good, though not yet at an excellent level, which is understandable given his internship experience. The project was not highly complex, but given the timeframe, it was challenging to complete. Eliel’s ability to ask questions and seek clarification has helped him understand the project requirements and expectations, and his willingness to learn is clear. However, he would benefit from being more vocal in group meetings and taking a more proactive approach to time management. Given his potential and progress, I recommend Eliel for a full-time position at JP Morgan, with the understanding that he will continue to develop his technical skills, improve his group communication, and adopt a more proactive approach in future projects.
+
+
+
+
+
+
+
+package com.example.curlapi.service;
+
+import com.example.curlapi.model.CurlConnectivityResponse;
+import org.springframework.stereotype.Service;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+@Service
+public class CurlConnectivityService {
+
+    // Method to execute the curl command and return a structured response
+    public CurlConnectivityResponse executeCurl(String curlCommand) {
+        if (curlCommand == null || curlCommand.isEmpty() || !curlCommand.startsWith("curl")) {
+            throw new IllegalArgumentException("Invalid curl command");
+        }
+
+        try {
+            // Build the command
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command("bash", "-c", curlCommand);
+
+            // Start the process
+            Process process = processBuilder.start();
+
+            // Capture output
+            StringBuilder result = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                result.append(line).append("\n");
+            }
+
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException("Failed to execute curl command. Exit code: " + exitCode);
+            }
+
+            // Return successful response
+            return new CurlConnectivityResponse(result.toString(), "Curl executed successfully", 200);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error occurred while executing curl command: " + ex.getMessage(), ex);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.example.curlapi.controller;
+
+import com.example.curlapi.model.CurlConnectivityResponse;
+import com.example.curlapi.service.CurlConnectivityService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/curl")
+public class CurlConnectivityController {
+
+    private final CurlConnectivityService curlConnectivityService;
+
+    public CurlConnectivityController(CurlConnectivityService curlConnectivityService) {
+        this.curlConnectivityService = curlConnectivityService;
+    }
+
+    // POST endpoint to accept the curl command
+    @PostMapping("/execute")
+    public ResponseEntity<CurlConnectivityResponse> executeCurlCommand(@RequestParam("curlCommand") String curlCommand) {
+        try {
+            // Process the curl command using the service
+            CurlConnectivityResponse response = curlConnectivityService.executeCurl(curlCommand);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            // Handle invalid curl command
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new CurlConnectivityResponse(null, ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
+        } catch (Exception ex) {
+            // Handle general errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new CurlConnectivityResponse(null, "An error occurred while executing the command", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+}
