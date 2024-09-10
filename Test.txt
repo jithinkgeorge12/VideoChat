@@ -1,42 +1,147 @@
-package com.example.curlapi.model;
+import React, { useState } from "react";
+import "./App.css";
 
-public class CurlConnectivityResponse {
+function App() {
+  const [abcdStatus, setAbcdStatus] = useState("Unknown");
+  const [domainStatus, setDomainStatus] = useState("Unknown");
+  const [domainMessage, setDomainMessage] = useState("");
+  const [curlOutput, setCurlOutput] = useState("Waiting for command...");
+  const [domain, setDomain] = useState("");
+  const [port, setPort] = useState("");
+  const [curlCommand, setCurlCommand] = useState("");
 
-    private String output;  // Output from the curl command
-    private String message; // A message that gives context (success, failure)
-    private int statusCode; // HTTP status code for the response
+  const checkABCD = () => {
+    fetch("/api/abcd/check")
+      .then((response) => response.json())
+      .then((data) => {
+        setAbcdStatus(data ? "Available" : "Down");
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
-    // Constructor
-    public CurlConnectivityResponse(String output, String message, int statusCode) {
-        this.output = output;
-        this.message = message;
-        this.statusCode = statusCode;
-    }
+  const checkDomain = () => {
+    fetch(`/api/domain/connectivity?domain=${domain}&port=${port}`)
+      .then((response) => response.json())
+      .then((data) => {
+        setDomainStatus(data.success ? "Success" : "Failed");
+        setDomainMessage(data.message);
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
-    // Getters and setters
-    public String getOutput() {
-        return output;
-    }
+  const executeCurl = () => {
+    fetch("/api/curl/execute", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ curlCommand }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setCurlOutput(data.output || "No output");
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
-    public void setOutput(String output) {
-        this.output = output;
-    }
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Connection Verification Tool</h1>
+      </header>
 
-    public String getMessage() {
-        return message;
-    }
+      <section className="App-section">
+        <h2>ABCD Availability Check</h2>
+        <button onClick={checkABCD}>Check Availability</button>
+        <p>Status: {abcdStatus}</p>
+      </section>
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
+      <section className="App-section">
+        <h2>Domain Connectivity Check</h2>
+        <input
+          type="text"
+          placeholder="Domain"
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Port"
+          value={port}
+          onChange={(e) => setPort(e.target.value)}
+        />
+        <button onClick={checkDomain}>Check Connectivity</button>
+        <p>Status: {domainStatus}</p>
+        <p>Message: {domainMessage}</p>
+      </section>
 
-    public int getStatusCode() {
-        return statusCode;
-    }
+      <section className="App-section">
+        <h2>Curl Command Execution</h2>
+        <textarea
+          placeholder="Enter curl command"
+          value={curlCommand}
+          onChange={(e) => setCurlCommand(e.target.value)}
+        />
+        <button onClick={executeCurl}>Execute Curl Command</button>
+        <pre>{curlOutput}</pre>
+      </section>
+    </div>
+  );
+}
 
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
+export default App;
+
+
+
+
+
+
+
+
+
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #000;
+  color: white;
+  padding: 20px;
+}
+
+.App-section {
+  margin: 20px auto;
+  padding: 20px;
+  max-width: 600px;
+  background-color: #f4f4f4;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+input, textarea, button {
+  margin: 10px 0;
+  padding: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+pre {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  text-align: left;
+  overflow-x: auto;
 }
 
 
@@ -44,109 +149,38 @@ public class CurlConnectivityResponse {
 
 
 
-
-
-
-
-package com.example.curlapi.service;
-
-import com.example.curlapi.model.CurlConnectivityResponse;
-import org.springframework.stereotype.Service;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-@Service
-public class CurlConnectivityService {
-
-    // Method to execute the curl command and return a structured response
-    public CurlConnectivityResponse executeCurl(String curlCommand) {
-        if (curlCommand == null || curlCommand.isEmpty() || !curlCommand.startsWith("curl")) {
-            throw new IllegalArgumentException("Invalid curl command");
-        }
-
-        try {
-            // Build the command
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("bash", "-c", curlCommand);
-
-            // Start the process
-            Process process = processBuilder.start();
-
-            // Capture output
-            StringBuilder result = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line).append("\n");
-            }
-
-            // Wait for the process to finish
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("Failed to execute curl command. Exit code: " + exitCode);
-            }
-
-            // Return successful response
-            return new CurlConnectivityResponse(result.toString(), "Curl executed successfully", 200);
-        } catch (Exception ex) {
-            throw new RuntimeException("Error occurred while executing curl command: " + ex.getMessage(), ex);
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-package com.example.curlapi.controller;
-
-import com.example.curlapi.model.CurlConnectivityResponse;
-import com.example.curlapi.service.CurlConnectivityService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/v1/curl")
-public class CurlConnectivityController {
-
-    private final CurlConnectivityService curlConnectivityService;
-
-    public CurlConnectivityController(CurlConnectivityService curlConnectivityService) {
-        this.curlConnectivityService = curlConnectivityService;
-    }
-
-    // POST endpoint to accept the curl command
-    @PostMapping("/execute")
-    public ResponseEntity<CurlConnectivityResponse> executeCurlCommand(@RequestParam("curlCommand") String curlCommand) {
-        try {
-            // Process the curl command using the service
-            CurlConnectivityResponse response = curlConnectivityService.executeCurl(curlCommand);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException ex) {
-            // Handle invalid curl command
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new CurlConnectivityResponse(null, ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
-        } catch (Exception ex) {
-            // Handle general errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CurlConnectivityResponse(null, "An error occurred while executing the command", HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
-    }
-}
+<plugin>
+    <groupId>com.github.eirslett</groupId>
+    <artifactId>frontend-maven-plugin</artifactId>
+    <version>1.10.0</version>
+    <executions>
+        <execution>
+            <id>install node and npm</id>
+            <goals>
+                <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+                <nodeVersion>v14.17.0</nodeVersion>
+                <npmVersion>6.14.13</npmVersion>
+            </configuration>
+        </execution>
+        <execution>
+            <id>npm install</id>
+            <goals>
+                <goal>npm</goal>
+            </goals>
+            <configuration>
+                <arguments>install</arguments>
+            </configuration>
+        </execution>
+        <execution>
+            <id>npm build</id>
+            <goals>
+                <goal>npm</goal>
+            </goals>
+            <configuration>
+                <arguments>run build</arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
